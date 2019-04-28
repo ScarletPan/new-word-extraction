@@ -22,7 +22,7 @@ def solidity(word, word2prob):
     return word2prob[word] / max_coocurrence[-1]
 
 
-def word_list_entropy(word_list, base=None):
+def word_list_entropy(word_list=None, counts=None, base=None):
     """
         word_list_entropy([w1, w2, w2, ..., w1, ...])
             = -log p(w1) - log p(w2) ...
@@ -31,6 +31,8 @@ def word_list_entropy(word_list, base=None):
     :param base: 2 or e
     :return: float
     """
-
-    value, counts = np.unique(word_list, return_counts=True)
+    if counts is None:
+        if word_list is None:
+            return 0.0
+        values, counts = np.unique(word_list, return_counts=True)
     return scipy.stats.entropy(counts, base=base)
