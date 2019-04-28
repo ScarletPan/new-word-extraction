@@ -9,6 +9,7 @@ import numpy as np
 from new_word_extraction.constants import PUNCTUATIONS
 from new_word_extraction.unsupervised.trie import TrieTree
 from new_word_extraction.utils.stats import solidity, word_list_entropy
+from new_word_extraction.utils.utils import get_all_ngrams
 
 
 class InfoEntropyDiscoverer(object):
@@ -16,7 +17,7 @@ class InfoEntropyDiscoverer(object):
         基于信息熵的新词发现方法
         参考 matrix67: http://www.matrix67.com/blog/archives/5044
 
-        粗糙版实现
+        dict版实现
     """
     def __init__(self, max_gram=4, min_freq=5, ngram_min_solidity=None, min_entropy=2.0):
         self.max_gram = max_gram
@@ -24,49 +25,68 @@ class InfoEntropyDiscoverer(object):
         self.min_solidity = ngram_min_solidity if ngram_min_solidity else \
             {i: 5 ** i for i in range(1, max_gram + 1)}
         self.min_entropy = min_entropy
+        self.unigram_sum = 0
         self.ngrams = None
         self.gram2solidity = None
         self.gram2entropy = None
 
-    def discover(self, doc_iter):
+    def find_candidate_ngrams(self, text):
         # Find candidate ngrams
         ngrams = defaultdict(int)
-        for text in doc_iter:
-            for i in range(len(text)):
-                for j in range(1, self.max_gram + 1):
-                    if set(text[i: i + j]) & PUNCTUATIONS or text[i: i + j].strip() is None:
-                        continue
-                    if i + j < len(text):
-                        ngrams[text[i: i + j]] += 1
+        for i in range(len(text) - self.max_gram):
+            for j in range(1, self.max_gram + 1):
+                if text[i + j - 1] in PUNCTUATIONS:
+                    break
+                ngrams[text[i: i + j]] += 1
+        for gram in get_all_ngrams(text[-self.max_gram:], sep=''):
+            if not set(gram) & PUNCTUATIONS:
+                ngrams[gram] += 1
+
         # Filtering low frequency ngrams
-        self.ngrams = {key: val for key, val in ngrams.items() if val >= self.min_freq}
-        unigram_sum = sum([val for key, val in self.ngrams.items() if len(key) == 1])
+        ngrams = {key: val for key, val in ngrams.items() if val >= self.min_freq}
+        self.unigram_sum = sum([val for key, val in ngrams.items() if len(key) == 1])
+
+        return ngrams
+
+    def filtered_by_solidity(self, ngrams):
 
         # Filtering low solidity ngrams
-        gram2solidity = {key: solidity(key, self.ngrams) * unigram_sum for key in self.ngrams}
-        ngrams = {key: val for key, val in self.ngrams.items()
+        gram2solidity = {key: solidity(key, ngrams) * self.unigram_sum for key in ngrams}
+        ngrams = {key: val for key, val in ngrams.items()
                   if gram2solidity[key] >= self.min_solidity[len(key)]}
-        self.ngrams = {}
+        return gram2solidity, ngrams
 
+    def filtered_by_entropy(self, text, ngrams):
         # Filtering low entropy ngrams
         gram2neighbors = {}
-        for text in doc_iter:
-            for i in range(len(text)):
-                for j in range(1, self.max_gram + 1):
-                    _gram = text[i: i + j]
-                    if _gram in ngrams:
-                        if _gram not in gram2neighbors:
-                            gram2neighbors[_gram] = [[], []]
-                        if i > 0:
-                            gram2neighbors[_gram][0].append(text[i - 1])
-                        if i + j < len(text):
-                            gram2neighbors[_gram][1].append(text[i + j])
+        for i in range(1, len(text)):
+            for j in range(1, self.max_gram + 1):
+                _gram = text[i: i + j]
+                if _gram in ngrams:
+                    if i + j >= len(text):
+                        break
+                    if _gram not in gram2neighbors:
+                        gram2neighbors[_gram] = [defaultdict(int), defaultdict(int)]
+                    gram2neighbors[_gram][0][text[i - 1]] += 1
+                    gram2neighbors[_gram][1][text[i + j]] += 1
+        tmp_gram2entropy = {
+            _gram: word_list_entropy(counts=list(gram2neighbors[_gram][0].values()))
+            for _gram in ngrams}
+        ngrams = {key: val for key, val in ngrams.items() if tmp_gram2entropy[key] >= self.min_entropy}
         gram2entropy = {
             _gram:
-            min(word_list_entropy(gram2neighbors[_gram][0]),
-                word_list_entropy(gram2neighbors[_gram][1]))
+                min(tmp_gram2entropy[_gram],
+                    word_list_entropy(counts=list(gram2neighbors[_gram][1].values())))
             for _gram in ngrams}
-        self.ngrams = {key: val for key, val in ngrams.items() if gram2entropy[key] >= self.min_entropy}
+        ngrams = {key: val for key, val in ngrams.items() if gram2entropy[key] >= self.min_entropy}
+        return gram2entropy, ngrams
+
+    def discover(self, text):
+        ngrams = self.find_candidate_ngrams(text)
+        gram2solidity, ngrams = self.filtered_by_solidity(ngrams)
+        gram2entropy, ngrams = self.filtered_by_entropy(text, ngrams)
+
+        self.ngrams = ngrams
         self.gram2solidity = {key: gram2solidity[key] for key in self.ngrams}
         self.gram2entropy = {key: gram2entropy[key] for key in self.ngrams}
 
