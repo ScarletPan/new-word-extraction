@@ -1,40 +1,8 @@
-#include "infoEnt.h"
+#include "simpleNewWords.h"
 
-namespace fastnewwords {
+namespace simplenewwords {
 
-bool is_chinese(const std::wstring& s) {
-    std::wstring_convert<convert_type, wchar_t> converter;
-    std::string str = converter.to_bytes(s);
-    unsigned char utf[4] = {0};
-    unsigned char unicode[3] = {0};
-    bool res = false;
-    for (int i = 0; i < str.length(); i++) {
-        if ((str[i] & 0x80) == 0) {
-            res = false;
-        }
-        else{
-            utf[0] = str[i];
-            utf[1] = str[i + 1];
-            utf[2] = str[i + 2];
-            i++;
-            i++;
-            unicode[0] = ((utf[0] & 0x0F) << 4) | ((utf[1] & 0x3C) >>2);
-            unicode[1] = ((utf[1] & 0x03) << 6) | (utf[2] & 0x3F);
-
-            if(unicode[0] >= 0x4e && unicode[0] <= 0x9f) {
-                if (unicode[0] == 0x9f && unicode[1] > 0xa5)
-                    res = false;
-                else
-                    res = true;
-            } else
-                res = false;
-        }
-    }
-    return res;
-}
-
-
-FastNewWords::FastNewWords() {
+SimpleNewWords::SimpleNewWords() {
     this->max_gram = 4;
     this->min_count = 5;
     this->min_solidity.push_back(1);
@@ -45,7 +13,7 @@ FastNewWords::FastNewWords() {
 }
 
 
-FastNewWords::FastNewWords(const size_t max_gram, const size_t min_count, const float base_solidity, const float min_entropy) {
+SimpleNewWords::SimpleNewWords(const size_t max_gram, const size_t min_count, const float base_solidity, const float min_entropy) {
     this->max_gram = max_gram;
     this->min_count = min_count;
     this->min_solidity.push_back(1);
@@ -56,9 +24,18 @@ FastNewWords::FastNewWords(const size_t max_gram, const size_t min_count, const 
 }
 
 
-dict_t FastNewWords::getCandidateNgrams(sentence_t& sentences) {
+dict_t SimpleNewWords::getCandidateNgrams(sentence_t& sentences) {
+    int steps = 0, total_steps = sentences.size();
     wn2positions_t wn2positions;
     for (size_t i = 0; i < sentences.size(); ++i) {
+        steps += 1;
+        if (steps % 500 == 0) {
+            std::cerr << std::fixed;
+            std::cerr << "Get candidate ngrams step 1: " 
+                    << std::setprecision(1) << std::setw(5) 
+                    << 1.0 * steps / total_steps * 100 << "%" << " \r";
+            std::cerr << std::flush;
+        }
         for (size_t j = 0; j < sentences[i].length(); ++j) {
             for (size_t word_len = 1; word_len <= this->max_gram; ++word_len) {
                 if (j + word_len > sentences[i].length())
@@ -70,14 +47,28 @@ dict_t FastNewWords::getCandidateNgrams(sentence_t& sentences) {
                 wn2positions[word].push_back(std::make_pair<int, int>(i, j));
             }
         }
+        
     }
 
+    std::cerr << "Get candidate ngrams step 1: 100%." << std::endl;
+
+    steps = 0; total_steps = wn2positions.size();
     dict_t dict;
     wn2positions_t::iterator it;
-    for (it = wn2positions.begin(); it != wn2positions.end(); it++) {
+    for (it = wn2positions.begin(); it != wn2positions.end(); it++ ) {
+        steps += 1;
+        if (steps % 500 == 0) {
+            std::cerr << std::fixed;
+            std::cerr << "Get candidate ngrams step 2: " 
+                    << std::setprecision(1) << std::setw(5) 
+                    << 1.0 * steps / total_steps * 100 << "%" << " \r";
+            std::cerr << std::flush;
+        }
         if (it->second.size() < this->min_count)
             continue;
-        if (!is_chinese(it->first))
+        if (myutils::have_punk(it->first))
+            continue;
+        if (!myutils::is_chinese(it->first))
             continue;
         if (dict.find(it->first) == dict.end()) {
             dict.insert(std::make_pair(it->first, WordStats(it->second.size())));
@@ -98,17 +89,25 @@ dict_t FastNewWords::getCandidateNgrams(sentence_t& sentences) {
             }
         }
     }
-
+    std::cerr << "Get candidate ngrams step 2: 100%." << std::endl;
     return dict;
 }
 
-score_vec_t FastNewWords::filteredDicts(dict_t& dict) {
+
+score_vec_t SimpleNewWords::filteredDicts(dict_t& dict) {
     score_dict_t score_dict;
     count_t uni_cnt = getUnigramSum(dict);
+    int steps = 0, total_steps = dict.size();
     for (auto& kv: dict) {
+        steps += 1;
+        if (steps % 100 == 0) {
+            std::cerr << std::fixed;
+            std::cerr << "Filterred by solidity & entropy: " 
+                    << std::setprecision(1) << std::setw(5) 
+                    << 1.0 * steps / total_steps * 100 << "%" << " \r";
+            std::cerr << std::flush;
+        }
         if (kv.first.length() < 2)
-            continue;
-        if (!is_chinese(kv.first))
             continue;
         float _sol = solidity(kv.first, dict) * uni_cnt;
         if (_sol < this->min_solidity[kv.first.length()])
@@ -122,11 +121,12 @@ score_vec_t FastNewWords::filteredDicts(dict_t& dict) {
         WordScore ws(kv.second.count, _sol, std::min(_lt_e, _rt_e));
         score_dict.insert(std::make_pair(kv.first, ws));
     }
+    std::cerr << "Filterred by solidity & entropy: 100%" << std::endl;
     return score_vec_t(score_dict.begin(), score_dict.end());
 }
 
 
-count_t FastNewWords::getUnigramSum(dict_t& dict) {
+count_t SimpleNewWords::getUnigramSum(dict_t& dict) {
     count_t cnt = 0;
     for (auto& kv: dict) {
         cnt += kv.second.count;
@@ -135,7 +135,7 @@ count_t FastNewWords::getUnigramSum(dict_t& dict) {
 }
 
 
-float FastNewWords::solidity(const std::wstring& word, const dict_t& d) {
+float SimpleNewWords::solidity(const std::wstring& word, const dict_t& d) {
     if (d.find(word) == d.end())
         return 0;
     count_t max_occur = 0;
@@ -152,7 +152,7 @@ float FastNewWords::solidity(const std::wstring& word, const dict_t& d) {
 }
 
 
-float FastNewWords::entropy(adj_words_t& adj_words) {
+float SimpleNewWords::entropy(adj_words_t& adj_words) {
     float _ent = 0;
     count_t total = 0;
     for (auto& kv: adj_words)
@@ -166,7 +166,7 @@ float FastNewWords::entropy(adj_words_t& adj_words) {
 }
 
 
-score_vec_t FastNewWords::discover(sentence_t& sentences) {
+score_vec_t SimpleNewWords::discover(sentence_t& sentences) {
     dict_t dict = getCandidateNgrams(sentences);
     score_vec_t score_vec = filteredDicts(dict);
     return score_vec;

@@ -210,7 +210,7 @@ class MultiCoreInfoEntropyDiscoverer(InfoEntropyDiscoverer):
         meaningless_token = frozenset(PUNCTUATIONS + '\n\t\u3000\xa0 ')
         for text in tqdm(texts):
             text += ' ' * self.max_gram
-            for i in range(len(text) - self.max_gram):
+            for i in range(len(text)):
                 for j in range(1, self.max_gram + 1):
                     if text[i + j - 1] in meaningless_token:
                         break

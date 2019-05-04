@@ -1,22 +1,23 @@
 #ifndef __infoEnt_h__
 #define __infoEnt_h__
 
-#include <codecvt>
+#include "myutils.h"
+#include <iostream>
+#include <iomanip>
 #include <limits>
-#include <locale>
 #include <math.h>
 #include <regex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
-namespace fastnewwords {
+namespace simplenewwords {
 
 class WordStats;
 class WordScore;
 
 using count_t = size_t;
-using convert_type = std::codecvt_utf8<wchar_t>;
 using adj_words_t = std::unordered_map<wchar_t, count_t>;
 using dict_t = std::unordered_map<std::wstring, WordStats>;
 using score_pair_t = std::pair<std::wstring, WordScore>;
@@ -25,6 +26,7 @@ using score_vec_t = std::vector<score_pair_t>;
 using pos_t = std::vector<std::pair<int, int>>;
 using wn2positions_t = std::unordered_map<std::wstring, pos_t>;
 using sentence_t = std::vector<std::wstring>;
+
 
 class WordStats {
 public:
@@ -50,10 +52,10 @@ public:
     };
 };
 
-class FastNewWords {
+class SimpleNewWords {
 public:
-    FastNewWords();
-    FastNewWords(const size_t max_gram, const size_t min_count, const float base_solidity, const float min_entropy);
+    SimpleNewWords();
+    SimpleNewWords(const size_t max_gram, const size_t min_count, const float base_solidity, const float min_entropy);
 
     score_vec_t discover(sentence_t& sentences);
     
@@ -77,8 +79,6 @@ private:
 
     float entropy(adj_words_t& adj_words);
 };
-
-bool is_chinese(const std::wstring& s);
 
 }
 

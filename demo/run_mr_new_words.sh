@@ -22,4 +22,6 @@ do
     python main.py -selecting_candidates -inp $filename > $TMP_PATH/score_$(basename $filename)
 done
 
+# reduce
 python main.py -get_final_results -inp_prefix $TMP_PATH/score_gram2_ -n_splits $NUM_ARTICLE > $OUT_PATH
+

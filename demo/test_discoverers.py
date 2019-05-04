@@ -1,12 +1,14 @@
 # encoding: utf-8
 
 import time
+import sys
 import jieba
 from new_word_extraction.unsupervised.infoEnt import InfoEntropyDiscoverer, TrieInfoEntropyDiscoverer
 
 
 if __name__ == "__main__":
-    text = open("data/books/tianlongbabu_jinyong.txt", encoding="utf-8").read()
+    text = open(sys.argv[1], encoding="utf-8").read()
+    # text = open("data/books/tianlongbabu_jinyong.txt", encoding="utf-8").read()
     # text = open("data/books/renmingdemingyi.txt", encoding="utf-8").read()
     # text = open("data/books/bingyuhuo.txt", encoding="utf-8").read()
     st = time.time()
