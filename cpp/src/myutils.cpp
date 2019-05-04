@@ -3,9 +3,7 @@
 namespace myutils
 {
 
-bool is_chinese(const std::wstring& s) {
-    std::wstring_convert<convert_type, wchar_t> converter;
-    std::string str = converter.to_bytes(s);
+bool is_chinese(const std::string& str) {
     unsigned char utf[4] = {0};
     unsigned char unicode[3] = {0};
     bool res = false;
@@ -34,6 +32,12 @@ bool is_chinese(const std::wstring& s) {
     return res;
 }
 
+bool is_chinese(const std::wstring& s) {
+    std::wstring_convert<convert_type, wchar_t> converter;
+    std::string str = converter.to_bytes(s);
+    return is_chinese(str);
+}
+
 
 bool have_punk(const std::wstring& s) {
     for (wchar_t wch: s) {
@@ -44,5 +48,83 @@ bool have_punk(const std::wstring& s) {
     return false;
 }
 
-    
+
+bool have_punk(const std::string& s) {
+    int i = 0;
+    std::string tmp;
+    while (i < s.length()) {
+        tmp = get_first_utf8(s, i);
+        if (PUNKS_U8.find(tmp) != PUNKS_U8.end()) {
+            return true;
+        }
+        if (tmp.empty()) break;
+        i += tmp.length();
+    }
+    return false;
+}
+
+
+size_t get_utf8_len(const char ch) {
+    size_t len =
+            (ch >> 7) == 0 ? 1 : // 0xxxxxxx
+            (~ch & 0x20) ? 2 :   // 110xxxxx 10xxxxxx
+            (~ch & 0x10) ? 3: 4;
+    return len;
+}
+
+
+std::string get_first_utf8(const std::string& utf8_str, const unsigned int st) {
+    if (utf8_str.size() - st == 0) return "";
+    size_t len = get_utf8_len(utf8_str[0]);
+    if (len > utf8_str.length() - st) {
+        std::cerr << "UTF-8 decoding error " << std::endl;
+        return "";
+    }
+    return utf8_str.substr(st, len);
+}
+
+std::vector<std::string> split_utf_str(const std::string& utf8_str) {
+    std::vector<std::string> res;
+    int i = 0;
+    while (i < utf8_str.length()) {
+        std::string s = get_first_utf8(utf8_str, i);
+        if (s.empty()) break;
+        res.push_back(s);
+        i += s.length();
+    }
+    return res;
+}
+
+
+std::string get_next_if_utf8(std::ifstream& utf8_if) {
+    char ch;
+    if (!utf8_if.get(ch)) {
+        return "";
+    }
+    size_t len = get_utf8_len(ch);
+    std::string str;
+    str.resize(len, '\0');
+    str[0] = ch;
+    for (int i = 1; i < len; ++i) {
+        if (!utf8_if.get(ch)) {
+            return "";
+        } else {
+            str[i] = ch;
+        }
+    }
+    return str;
+}
+
+
+size_t size_of_utf8(const std::string& utf8_str) {
+    size_t cnt = 0;
+    int i = 0;
+    while (i < utf8_str.length()) {
+        size_t len = get_utf8_len(utf8_str[i]);
+        i += len;
+        cnt++;
+    }
+    return cnt;
+}
+
 } // namespace utils
