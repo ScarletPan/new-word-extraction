@@ -28,20 +28,10 @@ FastNewWords::FastNewWords(const size_t max_gram, const size_t min_count, const 
 dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
     dict_t dict;
     std::stack<word_t> stk;
-    unsigned int ptr = 0;
     while (true) {
         word_t token = myutils::get_next_if_utf8(inp_stream);
         if (token.empty()) break;
-        if (myutils::is_chinese(token) && !myutils::have_punk(token)) {
-            if (dict.find(token) == dict.end()) {
-                word_stat_t ws;
-                dict.insert(std::make_pair(token, ws));
-            }
-            dict[token].first++;
-            dict[token].second.push_back(ptr);
-        }
         stk.push(token);
-        ptr += token.length();
         this->utf8_content += token;
     }
     while (!stk.empty()) {
@@ -49,6 +39,34 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
         stk.pop();
     }
  
+    position_t ptr = 0;
+    while (ptr < this->utf8_content.length()) {
+        word_t first_token = myutils::get_first_utf8(this->utf8_content, ptr);
+        if (myutils::is_chinese(first_token) && !myutils::have_punk(first_token)) {
+            word_t word(first_token);
+            if (dict.find(word) == dict.end()) {
+                word_stat_t ws;
+                dict.insert(std::make_pair(word, ws));
+            }
+            dict[word].first++;
+            dict[word].second.push_back(ptr);
+            for (int word_len = 1; word_len < this->max_gram; ++word_len) {
+                word_t next_token = myutils::get_first_utf8(this->utf8_content, ptr + word.length());
+                if (!myutils::is_chinese(next_token) || myutils::have_punk(next_token)) {
+                    break;
+                }
+                word += next_token;
+                if (dict.find(word) == dict.end()) {
+                    word_stat_t ws;
+                    dict.insert(std::make_pair(word, ws));
+                }
+                dict[word].first++;
+                dict[word].second.push_back(ptr);
+            }
+        }
+        ptr += first_token.length();        
+    }
+
     return dict;
 }
 
@@ -59,6 +77,9 @@ score_vec_t FastNewWords::filteredDicts(const dict_t& dict) {
     int steps = 0, total_steps = dict.size();
     for (auto& kv: dict) {
         word_t wd = kv.first;
+        if (wd == u8"李达康") {
+            int a = 0;
+        }
         word_stat_t ws = kv.second;
         steps += 1;
         if (steps % 100 == 0) {
@@ -68,16 +89,22 @@ score_vec_t FastNewWords::filteredDicts(const dict_t& dict) {
                       << 1.0 * steps / total_steps * 100 << "%" << " \r";
             std::cerr << std::flush;
         }
+        if (ws.first < this->min_count)
+            continue;
+        if (myutils::size_of_utf8(wd) < 2)
+            continue;
         float _sol = solidity(wd, dict) * uni_cnt;
         if (_sol < this->min_solidity[myutils::size_of_utf8(wd)])
             continue;
-        float _rt_e = entropy(ws.second, 
+        float _rt_e = entropy(wd,
+                              ws.second,
                               this->utf8_content, 
                               this->reversed_utf8_content,
                               false);
         if (_rt_e < this->min_entropy)
             continue;
-        float _lt_e = entropy(ws.second, 
+        float _lt_e = entropy(wd,
+                              ws.second,
                               this->utf8_content, 
                               this->reversed_utf8_content,
                               true);
@@ -122,25 +149,25 @@ float FastNewWords::solidity(const std::string& word, const dict_t& d) {
 }
 
 
-float FastNewWords::entropy(const std::vector<position_t>& positions, 
+float FastNewWords::entropy(const word_t& wd,
+                            const std::vector<position_t>& positions,
                             const std::string& utf8_content,
                             const std::string& reversed_utf8_content,
                             bool left) {
     // first extracting all neighbor words;
     std::unordered_map<word_t, count_t> dist;
-    size_t content_len = this->utf8_content.size();
+    size_t content_len = utf8_content.size();
     for (auto pos: positions) {
-        word_t cur_wd = myutils::get_first_utf8(this->utf8_content, pos);
         word_t neighbor_wd;
         if (left) {
-            neighbor_wd = myutils::get_second_utf8(
-                this->reversed_utf8_content,
-                content_len - pos - cur_wd.size()
-                );
+            neighbor_wd = myutils::get_first_utf8(
+                    reversed_utf8_content, content_len - pos);
         } else {
-            neighbor_wd = myutils::get_first_utf8(this->utf8_content, pos + cur_wd.length());
+            neighbor_wd = myutils::get_first_utf8(
+                    utf8_content, pos + wd.length());
         }
-        dist[neighbor_wd]++;
+        if (!neighbor_wd.empty())
+            dist[neighbor_wd]++;
     }
 
     // compute entropy

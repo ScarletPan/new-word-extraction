@@ -74,7 +74,7 @@ size_t get_utf8_len(const char ch) {
 
 
 std::string get_first_utf8(const std::string& utf8_str, const unsigned int st) {
-    if (utf8_str.size() - st == 0) return "";
+    if (utf8_str.size() - st <= 0) return "";
     size_t len = get_utf8_len(utf8_str[st]);
     if (len > utf8_str.length() - st) {
         std::cerr << "UTF-8 decoding error " << std::endl;
@@ -83,8 +83,8 @@ std::string get_first_utf8(const std::string& utf8_str, const unsigned int st) {
     return utf8_str.substr(st, len);
 }
 
-std::string get_second_utf8(std::string& utf8_str, const unsigned int st) {
-    if (utf8_str.size() - st == 0) return "";
+std::string get_second_utf8(const std::string& utf8_str, const unsigned int st) {
+    if (utf8_str.size() - st <= 0) return "";
     size_t cur_len = get_utf8_len(utf8_str[st]);
     return get_first_utf8(utf8_str, st + cur_len);
 }

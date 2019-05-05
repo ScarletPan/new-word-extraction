@@ -24,8 +24,8 @@ using word_t = std::string;
 using position_t = unsigned int;
 using word_stat_t = std::pair<count_t, std::vector<position_t>>;
 using dict_t = std::unordered_map<word_t, word_stat_t>;
-using score_pair_t = std::pair<std::string, WordScore>;
-using score_dict_t = std::unordered_map<std::string, WordScore>;
+using score_pair_t = std::pair<word_t, WordScore>;
+using score_dict_t = std::unordered_map<word_t, WordScore>;
 using score_vec_t = std::vector<score_pair_t>;
 
 class WordScore {
@@ -53,8 +53,8 @@ private:
     size_t min_count;
     std::vector<float> min_solidity;
     float min_entropy;
-    static std::string utf8_content;
-    static std::string reversed_utf8_content;
+    std::string utf8_content;
+    std::string reversed_utf8_content;
 
     dict_t getCandidateNgrams(std::istream& inp_stream);
 
@@ -68,7 +68,8 @@ private:
 
     float solidity(const std::string& word, const dict_t& d);
 
-    float entropy(const std::vector<position_t>& positions, 
+    float entropy(const word_t& wd,
+                  const std::vector<position_t>& positions,
                   const std::string& utf8_content,
                   const std::string& reversed_utf8_content,
                   bool left);
