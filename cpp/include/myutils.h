@@ -35,10 +35,13 @@ size_t get_utf8_len(const char ch);
 */
 std::string get_first_utf8(const std::string& utf8_str, const unsigned int st=0);
 
+
+std::string get_second_utf8(std::string& utf8_str, const unsigned int st=0);
+
 /*
     Get Next utf8 character from input stream
 */
-std::string get_next_if_utf8(std::ifstream& utf8_if);
+std::string get_next_if_utf8(std::istream& utf8_if);
 
 
 std::vector<std::string> split_utf_str(const std::string& utf8_str);

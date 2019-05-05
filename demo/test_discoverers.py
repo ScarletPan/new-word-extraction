@@ -8,9 +8,7 @@ from new_word_extraction.unsupervised.infoEnt import InfoEntropyDiscoverer, Trie
 
 if __name__ == "__main__":
     text = open(sys.argv[1], encoding="utf-8").read()
-    # text = open("data/books/tianlongbabu_jinyong.txt", encoding="utf-8").read()
-    # text = open("data/books/renmingdemingyi.txt", encoding="utf-8").read()
-    # text = open("data/books/bingyuhuo.txt", encoding="utf-8").read()
+
     st = time.time()
     discoverer = InfoEntropyDiscoverer()
     discoverer.discover(text.split('\n'))

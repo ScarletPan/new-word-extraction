@@ -75,12 +75,18 @@ size_t get_utf8_len(const char ch) {
 
 std::string get_first_utf8(const std::string& utf8_str, const unsigned int st) {
     if (utf8_str.size() - st == 0) return "";
-    size_t len = get_utf8_len(utf8_str[0]);
+    size_t len = get_utf8_len(utf8_str[st]);
     if (len > utf8_str.length() - st) {
         std::cerr << "UTF-8 decoding error " << std::endl;
         return "";
     }
     return utf8_str.substr(st, len);
+}
+
+std::string get_second_utf8(std::string& utf8_str, const unsigned int st) {
+    if (utf8_str.size() - st == 0) return "";
+    size_t cur_len = get_utf8_len(utf8_str[st]);
+    return get_first_utf8(utf8_str, st + cur_len);
 }
 
 std::vector<std::string> split_utf_str(const std::string& utf8_str) {
@@ -96,7 +102,7 @@ std::vector<std::string> split_utf_str(const std::string& utf8_str) {
 }
 
 
-std::string get_next_if_utf8(std::ifstream& utf8_if) {
+std::string get_next_if_utf8(std::istream& utf8_if) {
     char ch;
     if (!utf8_if.get(ch)) {
         return "";

@@ -42,27 +42,10 @@ int main(int argc, char** argv) {
     // // get inputs
     std::ifstream infile(INPUT_FILE, std::ios_base::binary);
 
-    sentence_t multi_sent_tokens;
-    vector<string> s;
-    while (true) {
-        std::string word = myutils::get_next_if_utf8(infile);
-        if (word.empty()) break;
-        if (word == "\n") {
-            if (!s.empty()) {
-                multi_sent_tokens.push_back(s);
-                s.clear();
-            }
-        } else {
-            s.push_back(word);
-        }
-    }
-    infile.close();
-
-//    std::cout << sentences[0] << std::endl;
-
     FastNewWords d;
-    score_vec_t scores = d.discover(multi_sent_tokens);
+    score_vec_t scores = d.discover(infile);
     std::sort(scores.begin(), scores.end(), mycomp);
+    infile.close();
 
     // print topk list
     for (int i = 0; i < 50; ++i)
