@@ -1,4 +1,3 @@
-#include <numeric>
 #include "fastNewWords.h"
 
 namespace fastnewwords {
@@ -38,7 +37,7 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
         this->reversed_utf8_content += stk.top();
         stk.pop();
     }
- 
+
     position_t ptr = 0;
     while (ptr < this->utf8_content.length()) {
         word_t first_token = myutils::get_first_utf8(this->utf8_content, ptr);
@@ -46,7 +45,8 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
             word_t word(first_token);
             if (dict.find(word) == dict.end()) {
                 word_stat_t ws;
-                dict.insert(std::make_pair(word, ws));
+                // dict.insert(word, ws); // hat trie
+                dict.insert({word, ws}); // std::unordered_map
             }
             dict[word].first++;
             dict[word].second.push_back(ptr);
@@ -58,7 +58,8 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
                 word += next_token;
                 if (dict.find(word) == dict.end()) {
                     word_stat_t ws;
-                    dict.insert(std::make_pair(word, ws));
+                    // dict.insert(word, ws); // hat trie
+                    dict.insert({word, ws}); // std::unordered_map
                 }
                 dict[word].first++;
                 dict[word].second.push_back(ptr);
@@ -71,30 +72,33 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
 }
 
 
-score_vec_t FastNewWords::filteredDicts(const dict_t& dict) {
-    score_dict_t score_dict;
+score_list_t FastNewWords::filteredDicts(const dict_t& dict) {
+    score_list_t score_list;
+
     count_t uni_cnt = getUnigramSum(dict);
     int steps = 0, total_steps = dict.size();
     for (auto& kv: dict) {
         word_t wd = kv.first;
-        if (wd == u8"李达康") {
-            int a = 0;
-        }
         word_stat_t ws = kv.second;
+    // for(auto it = dict.begin(); it != dict.end(); ++it) {
+    //     word_t wd = it.key();
+    //     word_stat_t ws = it.value();
+
         steps += 1;
         if (steps % 100 == 0) {
             std::cerr << std::fixed;
-            std::cerr << "Filterred by solidity & entropy: "
+            std::cerr << "Filterring: "
                       << std::setprecision(1) << std::setw(5)
                       << 1.0 * steps / total_steps * 100 << "%" << " \r";
             std::cerr << std::flush;
         }
         if (ws.first < this->min_count)
             continue;
-        if (myutils::size_of_utf8(wd) < 2)
+        size_t wd_size = myutils::size_of_utf8(wd);
+        if (wd_size < 2)
             continue;
         float _sol = solidity(wd, dict) * uni_cnt;
-        if (_sol < this->min_solidity[myutils::size_of_utf8(wd)])
+        if (_sol < this->min_solidity[wd_size])
             continue;
         float _rt_e = entropy(wd,
                               ws.second,
@@ -111,10 +115,10 @@ score_vec_t FastNewWords::filteredDicts(const dict_t& dict) {
         if (_lt_e < this->min_entropy)
             continue;
         WordScore wsc(ws.first, _sol, std::min(_lt_e, _rt_e));
-        score_dict.insert(std::make_pair(wd, wsc));
+        score_list.push_back({wd, wsc});
     }
     std::cerr << "Filterred by solidity & entropy: 100%" << std::endl;
-    return score_vec_t(score_dict.begin(), score_dict.end());
+    return score_list;
 }
 
 
@@ -123,6 +127,9 @@ count_t FastNewWords::getUnigramSum(const dict_t& dict) {
     for (auto& kv: dict) {
         cnt += kv.second.first;
     }
+    // for(auto it = dict.begin(); it != dict.end(); ++it) {
+    //     cnt += it.value().first;
+    // }
     return cnt;
 }
 
@@ -184,9 +191,9 @@ float FastNewWords::entropy(const word_t& wd,
 }
 
 
-score_vec_t FastNewWords::discover(std::istream& inp_stream) {
+score_list_t FastNewWords::discover(std::istream& inp_stream) {
     dict_t dict = getCandidateNgrams(inp_stream);
-    score_vec_t score_vec = filteredDicts(dict);
+    score_list_t score_vec = filteredDicts(dict);
     return score_vec;
 }
 

@@ -49,6 +49,12 @@ std::vector<std::string> split_utf_str(const std::string& utf8_str);
 
 size_t size_of_utf8(const std::string& utf8_str);
 
+size_t size_of_unicode_cn(const std::string& unicode_str);
+
+std::string utf8_to_unicode_cn(const std::string& utf8_str);
+
+std::string unicode_to_utf8_cn(const std::string& unicode_str);
+
 }
 
 #endif

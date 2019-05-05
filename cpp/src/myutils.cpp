@@ -133,4 +133,40 @@ size_t size_of_utf8(const std::string& utf8_str) {
     return cnt;
 }
 
+
+size_t size_of_unicode_cn(const std::string& unicode_str) {
+    return unicode_str.size() / 2;
+}
+
+
+std::string utf8_to_unicode_cn(const std::string& utf8_str) {
+    std::string buffer;
+    size_t ptr = 0;
+    while (ptr < utf8_str.size()) {
+        size_t len = get_utf8_len(utf8_str[ptr]);
+        if (len != 3 || (ptr + len) > utf8_str.size())
+            return "";
+        unsigned char first_byte = (utf8_str[ptr] & 0x0F) << 4;  // 1110 xxxx
+        first_byte |= (utf8_str[ptr + 1] & 0x3C) >> 2; //10xx xxxx
+        unsigned char second_byte = (utf8_str[ptr + 1] & 0x03) << 6;
+        second_byte |= (utf8_str[ptr + 2] & 0x3F);
+        buffer += first_byte;
+        buffer += second_byte;
+        ptr += len;
+    }
+    return buffer;
+}
+
+std::string unicode_to_utf8_cn(const std::string& unicode_str) {
+    std::string buffer;
+    for (int i = 0; i < unicode_str.size() / 2; ++i) {
+        uint8_t first_byte = unicode_str[i * 2];
+        uint8_t second_byte = unicode_str[i * 2 + 1];
+        buffer += (char) (0xE0 | (first_byte >> 4));
+        buffer += (char) (0x80 | ((first_byte << 2) & 0x3F) | (second_byte >> 6));
+        buffer += (char) (0x80 | (second_byte & 0x3F));
+    }
+    return buffer;
+}
+
 } // namespace utils

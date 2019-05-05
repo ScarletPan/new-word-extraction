@@ -1,5 +1,4 @@
 #include "fastNewWords.h"
-
 #include "myutils.h"
 #include <codecvt>
 #include <clocale>
@@ -16,7 +15,7 @@ bool mycomp(score_pair_t& s1, score_pair_t& s2) {
     return s1.second.count > s2.second.count;
 }
 
-void print_results(score_vec_t& scores, const int n, const int topk=50) {
+void print_results(score_list_t& scores, const int n, const int topk=50) {
     int cnt = 0;
     for (int i = 0; i < scores.size(); ++i) {
         auto kv = scores[i];
@@ -43,7 +42,7 @@ int main(int argc, char** argv) {
     std::ifstream infile(INPUT_FILE, std::ios_base::binary);
 
     FastNewWords d;
-    score_vec_t scores = d.discover(infile);
+    score_list_t scores = d.discover(infile);
     std::sort(scores.begin(), scores.end(), mycomp);
     infile.close();
 
