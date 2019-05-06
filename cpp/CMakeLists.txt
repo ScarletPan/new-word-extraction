@@ -11,8 +11,14 @@ include_directories(include)
 #        src/main.cpp
 #        )
 
+#add_executable(cpp
+#        src/myutils.cpp
+#        src/fastNewWords.cpp
+#        src/main_fast.cpp
+#        )
+
 add_executable(cpp
         src/myutils.cpp
-        src/fastNewWords.cpp
-        src/main_fast.cpp
+        src/trieNewWords.cpp
+        src/main_trie.cpp
         )
