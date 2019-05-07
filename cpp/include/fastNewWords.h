@@ -2,10 +2,6 @@
 #define __infoEnt_h__
 
 #include "myutils.h"
-// #include <tsl/htrie_map.h>
-// #include <tsl/array-hash/array_map.h>
-// #include <parallel_hashmap/phmap.h>
-// #include "flat_hash_map.h"
 #include <iostream>
 #include <iomanip>
 #include <limits>
@@ -27,10 +23,7 @@ using count_t = size_t;
 using word_t = std::string;
 using position_t = unsigned int;
 using word_stat_t = std::pair<count_t, std::vector<position_t>>;
-// using dict_t = ska::flat_hash_map<word_t, word_stat_t>;
 using dict_t = std::unordered_map<word_t, word_stat_t>;
-// using dict_t = tsl::array_map<char, word_stat_t>;
-// using dict_t = tsl::htrie_map<char, word_stat_t>;
 using score_pair_t = std::pair<word_t, WordScore>;
 using score_list_t = std::vector<score_pair_t>;
 

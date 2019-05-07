@@ -44,12 +44,13 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
         if (myutils::is_chinese(first_token) && !myutils::have_punk(first_token)) {
             word_t word(first_token);
             if (dict.find(word) == dict.end()) {
-                word_stat_t ws;
-                // dict.insert(word, ws); // hat trie
-                dict.insert({word, ws}); // std::unordered_map
+                word_stat_t ws({1, {ptr}});
+                dict.insert({word, ws});
+            } else {
+                word_stat_t &ws = dict[word];
+                ws.first++;
+                ws.second.push_back(ptr);
             }
-            dict[word].first++;
-            dict[word].second.push_back(ptr);
             for (int word_len = 1; word_len < this->max_gram; ++word_len) {
                 word_t next_token = myutils::get_first_utf8(this->utf8_content, ptr + word.length());
                 if (!myutils::is_chinese(next_token) || myutils::have_punk(next_token)) {
@@ -57,12 +58,13 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
                 }
                 word += next_token;
                 if (dict.find(word) == dict.end()) {
-                    word_stat_t ws;
-                    // dict.insert(word, ws); // hat trie
-                    dict.insert({word, ws}); // std::unordered_map
+                    word_stat_t ws({1, {ptr}});
+                    dict.insert({word, ws});
+                } else {
+                    word_stat_t &ws = dict[word];
+                    ws.first++;
+                    ws.second.push_back(ptr);
                 }
-                dict[word].first++;
-                dict[word].second.push_back(ptr);
             }
         }
         ptr += first_token.length();        
@@ -80,10 +82,6 @@ score_list_t FastNewWords::filteredDicts(const dict_t& dict) {
     for (auto& kv: dict) {
         word_t wd = kv.first;
         word_stat_t ws = kv.second;
-    // for(auto it = dict.begin(); it != dict.end(); ++it) {
-    //     word_t wd = it.key();
-    //     word_stat_t ws = it.value();
-
         steps += 1;
         if (steps % 100 == 0) {
             std::cerr << std::fixed;
@@ -127,9 +125,6 @@ count_t FastNewWords::getUnigramSum(const dict_t& dict) {
     for (auto& kv: dict) {
         cnt += kv.second.first;
     }
-    // for(auto it = dict.begin(); it != dict.end(); ++it) {
-    //     cnt += it.value().first;
-    // }
     return cnt;
 }
 

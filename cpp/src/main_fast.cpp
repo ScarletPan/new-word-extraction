@@ -1,6 +1,6 @@
 #include "fastNewWords.h"
 #include "myutils.h"
-#include <codecvt>
+#include <algorithm>
 #include <clocale>
 #include <iomanip>
 #include <iostream>
@@ -11,7 +11,7 @@ using namespace fastnewwords;
 using namespace std;
 //using namespace myutils;
 
-bool mycomp(score_pair_t& s1, score_pair_t& s2) {
+bool mycomp(const score_pair_t& s1, const score_pair_t& s2) {
     return s1.second.count > s2.second.count;
 }
 
@@ -33,45 +33,16 @@ void print_results(score_list_t& scores, const int n, const int topk=50) {
 
 
 int main(int argc, char** argv) {
-
-    // set args
-    const std::string INPUT_FILE = argv[1];
-    const std::string OUTPUT_FILE = argv[2];
-
-    // // get inputs
-    std::ifstream infile(INPUT_FILE, std::ios_base::binary);
-
     FastNewWords d;
-    score_list_t scores = d.discover(infile);
+    score_list_t scores = d.discover(std::cin);
     std::sort(scores.begin(), scores.end(), mycomp);
-    infile.close();
-
-    // print topk list
-    for (int i = 0; i < 50; ++i)
-        std::cout << "=";
-    std::cout << std::endl;
-    print_results(scores, 2);
-    std::cout << std::endl;
-    for (int i = 0; i < 50; ++i)
-        std::cout << "=";
-    std::cout << std::endl;
-    print_results(scores, 3);
-    std::cout << std::endl;
-    for (int i = 0; i < 50; ++i)
-        std::cout << "=";
-    std::cout << std::endl;
-    print_results(scores, 4);
-    std::cout << std::endl;
-
     // output
-    std::ofstream outfile(OUTPUT_FILE, std::ios::out);
     for (auto kv: scores) {
-        outfile << kv.first << " ";
-        outfile << kv.second.count << " ";
-        outfile << kv.second.solidity << " ";
-        outfile << kv.second.entropy << " " << std::endl;
+        std::cout << kv.first << " ";
+        std::cout << kv.second.count << " ";
+        std::cout << kv.second.solidity << " ";
+        std::cout << kv.second.entropy << " " << std::endl;
     }
-    outfile.close();
 
     return 0;
 }
