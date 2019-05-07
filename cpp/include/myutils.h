@@ -1,6 +1,5 @@
 #ifndef __MYUTILS_H__
 #define __MYUTILS_H__
-#include <codecvt>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -18,7 +17,9 @@ static const std::unordered_set<std::string> PUNKS_U8 = {
     u8"！", u8"？", u8"｡", u8"。", u8"＂", u8"＃", u8"＄", u8"％", u8"＆", u8"＇", u8"（", u8"）", u8"＊", u8"＋", u8"，", u8"－", u8"／", u8"：", u8"；", u8"＜", u8"＝", u8"＞", u8"＠", u8"［", u8"＼", u8"］", u8"＾", u8"＿", u8"｀", u8"｛", u8"｜", u8"｝", u8"～", u8"｟", u8"｠", u8"｢", u8"｣", u8"､", u8"、", u8"〃", u8"》", u8"「", u8"」", u8"『", u8"』", u8"【", u8"】", u8"〔", u8"〕", u8"〖", u8"〗", u8"〘", u8"〙", u8"〚", u8"〛", u8"〜", u8"〝", u8"〞", u8"〟", u8"〰", u8"〾", u8"〿", u8"–", u8"—", u8"‘", u8"’", u8"‛", u8"“", u8"”", u8"„", u8"‟", u8"…", u8"‧", u8"﹏", u8"."
 };
 
-using convert_type = std::codecvt_utf8<wchar_t>;
+// using convert_type = std::codecvt_utf8<wchar_t>;
+
+std::string WstringToString(const std::wstring str);
 
 bool is_chinese(const std::wstring& s);
 

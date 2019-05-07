@@ -32,9 +32,19 @@ bool is_chinese(const std::string& str) {
     return res;
 }
 
+std::string WstringToString(const std::wstring str)
+{// wstring转string
+    unsigned len = str.size() * 4;
+    setlocale(LC_CTYPE, "");
+    char *p = new char[len];
+    wcstombs(p,str.c_str(),len);
+    std::string str1(p);
+    delete[] p;
+    return str1;
+}
+
 bool is_chinese(const std::wstring& s) {
-    std::wstring_convert<convert_type, wchar_t> converter;
-    std::string str = converter.to_bytes(s);
+    std::string str = WstringToString(s);
     return is_chinese(str);
 }
 
