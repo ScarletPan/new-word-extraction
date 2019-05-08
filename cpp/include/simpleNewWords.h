@@ -5,8 +5,7 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
-#include <math.h>
-#include <regex>
+#include <cmath>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>

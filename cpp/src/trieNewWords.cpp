@@ -24,7 +24,7 @@ TrieNewWords::TrieNewWords(const size_t max_gram, const size_t min_count, const 
 }
 
 
-dict_t TrieNewWords::getCandidateNgrams(std::istream& inp_stream) {
+dict_t TrieNewWords::getCandidateNgrams(std::istream& inp_stream, bool filtered_min_freq) {
     std::string utf8_content = "";
     std::stack<word_t> stk;
     while (true) {
@@ -42,7 +42,7 @@ dict_t TrieNewWords::getCandidateNgrams(std::istream& inp_stream) {
         if (myutils::is_chinese(first_token) && !myutils::have_punk(first_token)) {
             word_t word(first_token);
             if (dict.find(word) == dict.end()) {
-                word_stat_t ws(1, adj_word_t());
+                word_stat_t ws({1, adj_word_t()});
                 dict.insert(word, ws); // hat trie
                 // dict.insert({word, ws}); // std::unordered_map
             } else {
@@ -56,7 +56,7 @@ dict_t TrieNewWords::getCandidateNgrams(std::istream& inp_stream) {
                 }
                 word += next_token;
                 if (dict.find(word) == dict.end()) {
-                    word_stat_t ws(1, adj_word_t());
+                    word_stat_t ws({1, adj_word_t()});
                     dict.insert(word, ws); // hat trie
                     // dict.insert({word, ws}); // std::unordered_map
                 } else {
@@ -74,13 +74,13 @@ dict_t TrieNewWords::getCandidateNgrams(std::istream& inp_stream) {
         word_t first_token = myutils::get_first_utf8(utf8_content, ptr);
         if (dict.find(first_token) != dict.end()) {
             word_t word(first_token);
-            if (dict[word].first >= this->min_count) {
+            if (!filtered_min_freq || dict[word].first >= this->min_count) {
                 for (int word_len = 1; word_len < this->max_gram + 1; ++word_len) {
                     word_t next_token = myutils::get_first_utf8(utf8_content, ptr + word.length());
                     if (word_len > 1) {
                         word_stat_t& ws = dict[word];
                         // this is a hack, count(abc) < thr => count(abcd) < thr;
-                        if (ws.first < this->min_count)
+                        if (filtered_min_freq && ws.first < this->min_count)
                             break;
                         if (ws.second.find(previous_token) == ws.second.end())
                             ws.second.insert({previous_token, {1, 0}});
@@ -210,10 +210,35 @@ float TrieNewWords::adjEntropy(const adj_word_t& adj_words) {
 }
 
 
+
+std::string TrieNewWords::wordStat2str(const word_t& wd, const word_stat_t& ws) {
+    std::string res(wd);
+    res += "|";
+    res += std::to_string(ws.first);
+    res += "|";
+    for (auto& kv: ws.second) {
+        res += kv.first + ',';
+        res += std::to_string(kv.second.first) + ',';
+        res += std::to_string(kv.second.second) + ';';
+    }
+    res += '\n';
+    return res;
+}
+
+
 score_list_t TrieNewWords::discover(std::istream& inp_stream) {
     dict_t dict = getCandidateNgrams(inp_stream);
     score_list_t score_vec = filteredDicts(dict);
     return score_vec;
+}
+
+void TrieNewWords::map_1_getNgrams(std::istream& inp_stream, std::ostream& outp_stream) {
+    dict_t dict = getCandidateNgrams(inp_stream, true);
+    for(auto it = dict.begin(); it != dict.end(); ++it) {
+        word_t wd = it.key();
+        word_stat_t ws = it.value();
+        outp_stream << wordStat2str(wd, ws);
+    }
 }
 
 }

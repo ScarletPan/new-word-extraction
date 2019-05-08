@@ -1,5 +1,5 @@
 #include "simpleNewWords.h"
-#include <codecvt>
+#include <algorithm>
 #include <clocale>
 #include <iomanip>
 #include <iostream>
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     }
     infile.close();
 
-    SimpleNewWords d;
+    SimpleNewWords d(4, 0, 5, 2.0);
     score_vec_t scores = d.discover(sentences);
     std::sort(scores.begin(), scores.end(), mycomp);
 

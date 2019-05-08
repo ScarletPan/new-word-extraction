@@ -1,13 +1,13 @@
 import codecs
 from setuptools import setup, find_packages
 
-with codecs.open('README.md', 'r', 'utf8') as reader:
-    long_description = reader.read()
+# with codecs.open('README.md', 'r', 'utf8') as reader:
+#     long_description = reader.read()
 
 setup(name='new_word_extraction',
       version='0.0.1g',
       description='new-word-extraction',
-      long_description=long_description,
+      long_description="",
       author='Pan Haojie',
       author_email='jasonhjpan@tencent.com',
       install_requires=[
