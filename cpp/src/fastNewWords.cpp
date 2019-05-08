@@ -27,6 +27,7 @@ FastNewWords::FastNewWords(const size_t max_gram, const size_t min_count, const 
 dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
     dict_t dict;
     std::stack<word_t> stk;
+    std::cerr << "Load whole documents...";
     while (true) {
         word_t token = myutils::get_next_if_utf8(inp_stream);
         if (token.empty()) break;
@@ -37,9 +38,18 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
         this->reversed_utf8_content += stk.top();
         stk.pop();
     }
+    std::cerr << " Done."  << std::endl;
 
     position_t ptr = 0;
+    size_t content_len = this->utf8_content.length();
     while (ptr < this->utf8_content.length()) {
+        if (ptr % 50000 == 0) {
+            std::cerr << std::fixed;
+            std::cerr << "Word counting: " 
+                    << std::setprecision(1) << std::setw(5) 
+                    << 1.0 * ptr / content_len * 100 << "%" << " \r";
+            std::cerr << std::flush;
+        }
         word_t first_token = myutils::get_first_utf8(this->utf8_content, ptr);
         if (myutils::is_chinese(first_token) && !myutils::have_punk(first_token)) {
             word_t word(first_token);
@@ -69,6 +79,9 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
         }
         ptr += first_token.length();        
     }
+    std::cerr << "Word counting: " 
+              << std::setprecision(1) << std::setw(5) 
+              << 100 << "%" << std::endl;
 
     return dict;
 }
