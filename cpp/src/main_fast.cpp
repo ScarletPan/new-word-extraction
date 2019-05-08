@@ -1,56 +1,25 @@
 #include "fastNewWords.h"
 #include "myutils.h"
-#include "cxxopts.hpp"
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 using namespace fastnewwords;
 using namespace std;
 
 
-cxxopts::ParseResult
-parse_args(int argc, char* argv[])
-{
-  try
-  {
-    cxxopts::Options options(argv[0], " - New words Discovery Module options");
-    options
-      .positional_help("[optional args]")
-      .show_positional_help();
+#include <algorithm>
 
-    bool apple = false;
-
-    options
-      .allow_unrecognised_options()
-      .add_options()
-      ("m,map_type", "Mapping type, 'hash' or 'trie'", cxxopts::value<std::string>()->default_value("hash"))
-      ("g,max_gram", "Max gram length", cxxopts::value<size_t>()->default_value("4"))
-      ("c,min_count", "Minimum count", cxxopts::value<size_t>()->default_value("5"))
-      ("s,base_solidity", "Minimum solidity of unigram", cxxopts::value<float>()->default_value("5.0"))
-      ("e,min_entropy", "Minimum entropy", cxxopts::value<float>()->default_value("2.0"))
-      ("sort", "Sort the results")
-      ("help", "Print help")
-    #ifdef CXXOPTS_USE_UNICODE
-      ("unicode", u8"A help option with non-ascii: à. Here the size of the"
-        " string should be correct")
-    #endif
-    ;
-
-    auto result = options.parse(argc, argv);
-    
-    if (result.count("help"))
-    {
-      std::cout << options.help({"", "Group"}) << std::endl;
-      exit(0);
+char* getCmdOption(char ** begin, char ** end, const std::string & option) {
+    char ** itr = std::find(begin, end, option);
+    if (itr != end && ++itr != end) {
+        return *itr;
     }
+    return 0;
+}
 
-    return result;
-
-  } catch (const cxxopts::OptionException& e)
-  {
-    std::cout << "error parsing options: " << e.what() << std::endl;
-    exit(1);
-  }
+bool cmdOptionExists(char** begin, char** end, const std::string& option) {
+    return std::find(begin, end, option) != end;
 }
 
 bool mycomp(const score_pair_t& s1, const score_pair_t& s2) {
@@ -58,18 +27,89 @@ bool mycomp(const score_pair_t& s1, const score_pair_t& s2) {
 }
 
 int main(int argc, char** argv) {
-    auto result = parse_args(argc, argv);
-    auto arguments = result.arguments();
+    string map_type;
+    if (cmdOptionExists(argv, argv+argc, "-h") || cmdOptionExists(argv, argv+argc, "--help")) {
+        cerr << 
+        " - New words Discovery Module options\n"
+        " Usage:\n"
+        "   ./newwords-fast [OPTION...]\n\n"
+        "   -m, --map_type arg       Mapping type, 'hash' or 'trie' (default: 'hash')\n"
+        "   -g, --max_gram arg       Max gram length (default: 4)\n"
+        "   -c, --min_count arg      Minimum count (default: 5)\n"
+        "   -s, --base_solidity arg  Minimum solidity of unigram (default: 5.0)\n"
+        "   -e, --min_entropy arg    Minimum entropy (default: 2.0)\n"
+        "       --sort               Sort the results\n"
+        "   -h, --help               Print help\n\n";
+        return 0;
+    }
+
+    if (cmdOptionExists(argv, argv+argc, "-m")) {
+        map_type = getCmdOption(argv, argv + argc, "-m");
+    } else if (cmdOptionExists(argv, argv+argc, "--map_type")) {
+        map_type = getCmdOption(argv, argv + argc, "--map_type");
+    } else {
+        map_type = "hash";
+    }
+
+    size_t max_gram;
+    if (cmdOptionExists(argv, argv+argc, "-g")) {
+        max_gram = std::stoi(getCmdOption(argv, argv + argc, "-g"));
+    } else if (cmdOptionExists(argv, argv+argc, "--max_gram")) {
+        max_gram = std::stoi(getCmdOption(argv, argv + argc, "--max_gram"));
+    } else {
+        max_gram = 4;
+    }
+
+    size_t min_count;
+    if (cmdOptionExists(argv, argv+argc, "-c")) {
+        min_count = std::atoi(getCmdOption(argv, argv + argc, "-c"));
+    } else if (cmdOptionExists(argv, argv+argc, "--min_count")) {
+        min_count = std::atoi(getCmdOption(argv, argv + argc, "--min_count"));
+    } else {
+        min_count = 5;
+    }
+
+    float base_solidity;
+    if (cmdOptionExists(argv, argv+argc, "-s")) {
+        base_solidity = std::atof(getCmdOption(argv, argv + argc, "-s"));
+    } else if (cmdOptionExists(argv, argv+argc, "--base_solidity")) {
+        base_solidity = std::atof(getCmdOption(argv, argv + argc, "--base_solidity"));
+    } else {
+        base_solidity = 5.0;
+    }
+
+    float min_entropy;
+    if (cmdOptionExists(argv, argv+argc, "-s")) {
+        min_entropy = std::atof(getCmdOption(argv, argv + argc, "-c"));
+    } else if (cmdOptionExists(argv, argv+argc, "--min_entropy")) {
+        min_entropy = std::atof(getCmdOption(argv, argv + argc, "--min_entropy"));
+    } else {
+        min_entropy = 2.0;
+    }
+    
+    bool sort_results = false;
+    if (cmdOptionExists(argv, argv+argc, "--sort"))
+        sort_results = true;
+
+    cerr << std::fixed;
+    cerr << "\nNew Words Discovery Parameters: " << endl;
+    cerr << "\t[map_type]:      " << map_type << endl;
+    cerr << "\t[max_gram]:      " << max_gram << endl;
+    cerr << "\t[min_count]:     " << min_count << endl;
+    cerr << "\t[base_solidity]: " << setprecision(1) << base_solidity << endl;
+    cerr << "\t[min_entropy]:   " << setprecision(1) << min_entropy << endl;
+    cerr << "\t[sort]:          " << string(sort_results ? "true": "false") << endl << endl;
+
     FastNewWords d(
-        result["map_type"].as<std::string>(), 
-        result["max_gram"].as<size_t>(),
-        result["min_count"].as<size_t>(),
-        result["base_solidity"].as<float>(),
-        result["min_entropy"].as<float>()
+        map_type, 
+        max_gram,
+        min_count,
+        base_solidity,
+        min_entropy
         );
 
     score_list_t scores = d.discover(std::cin);
-    if (result["sort"].count() > 0)
+    if (sort_results)
         sort(scores.begin(), scores.end(), mycomp);
     // output
     for (auto kv: scores) {
