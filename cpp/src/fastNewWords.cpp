@@ -3,6 +3,7 @@
 namespace fastnewwords {
 
 FastNewWords::FastNewWords() {
+    this->map_type = "hash";
     this->max_gram = 4;
     this->min_count = 5;
     this->min_solidity.push_back(1);
@@ -13,7 +14,8 @@ FastNewWords::FastNewWords() {
 }
 
 
-FastNewWords::FastNewWords(const size_t max_gram, const size_t min_count, const float base_solidity, const float min_entropy) {
+FastNewWords::FastNewWords(const std::string map_type, const size_t max_gram, const size_t min_count, const float base_solidity, const float min_entropy) {
+    this->map_type = map_type;
     this->max_gram = max_gram;
     this->min_count = min_count;
     this->min_solidity.push_back(1);
@@ -24,8 +26,18 @@ FastNewWords::FastNewWords(const size_t max_gram, const size_t min_count, const 
 }
 
 
-dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
-    dict_t dict;
+
+void FastNewWords::insertWord(dict_t& d, const word_t& wd, const word_stat_t& ws) {
+    d.insert({wd, ws});
+}
+
+void FastNewWords::insertWord(trie_t& d, const word_t& wd, const word_stat_t& ws) {
+    d.insert(wd, ws);
+}
+
+template<typename T>
+T FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
+    T dict;
     std::stack<word_t> stk;
     std::cerr << "Load whole documents...";
     while (true) {
@@ -55,7 +67,7 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
             word_t word(first_token);
             if (dict.find(word) == dict.end()) {
                 word_stat_t ws({1, {ptr}});
-                dict.insert({word, ws});
+                insertWord(dict, word, ws);  // dict.insert({word, ws});
             } else {
                 word_stat_t &ws = dict[word];
                 ws.first++;
@@ -69,7 +81,7 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
                 word += next_token;
                 if (dict.find(word) == dict.end()) {
                     word_stat_t ws({1, {ptr}});
-                    dict.insert({word, ws});
+                    insertWord(dict, word, ws);  // dict.insert({word, ws});
                 } else {
                     word_stat_t &ws = dict[word];
                     ws.first++;
@@ -87,14 +99,14 @@ dict_t FastNewWords::getCandidateNgrams(std::istream& inp_stream) {
 }
 
 
-score_list_t FastNewWords::filteredDicts(const dict_t& dict) {
+template<typename T>
+score_list_t FastNewWords::filteredDicts(const T& dict) {
     score_list_t score_list;
-
     count_t uni_cnt = getUnigramSum(dict);
     int steps = 0, total_steps = dict.size();
-    for (auto& kv: dict) {
-        word_t wd = kv.first;
-        word_stat_t ws = kv.second;
+    for (auto it = dict.begin(); it != dict.end(); ++it) {
+        word_t wd = getKey(it);
+        word_stat_t ws = getValue(it);
         steps += 1;
         if (steps % 100 == 0) {
             std::cerr << std::fixed;
@@ -133,6 +145,24 @@ score_list_t FastNewWords::filteredDicts(const dict_t& dict) {
 }
 
 
+word_t FastNewWords::getKey(dict_t::const_iterator& it) {
+    return it->first;
+}
+
+word_t FastNewWords::getKey(trie_t::const_iterator& it) {
+    return it.key();
+}
+
+    
+word_stat_t FastNewWords::getValue(dict_t::const_iterator& it) {
+    return it->second;
+}
+
+word_stat_t FastNewWords::getValue(trie_t::const_iterator& it) {
+    return it.value();
+}
+
+
 count_t FastNewWords::getUnigramSum(const dict_t& dict) {
     count_t cnt = 0;
     for (auto& kv: dict) {
@@ -141,8 +171,16 @@ count_t FastNewWords::getUnigramSum(const dict_t& dict) {
     return cnt;
 }
 
+count_t FastNewWords::getUnigramSum(const trie_t& dict) {
+    count_t cnt = 0;
+    for(auto it = dict.begin(); it != dict.end(); ++it) {
+        cnt += it.value().first;
+    }
+    return cnt;
+}
 
-float FastNewWords::solidity(const std::string& word, const dict_t& d) {
+template<typename T>
+float FastNewWords::solidity(const word_t& word, const T& d) {
     if (d.find(word) == d.end())
         return 0;
     count_t max_occur = 0;
@@ -200,9 +238,19 @@ float FastNewWords::entropy(const word_t& wd,
 
 
 score_list_t FastNewWords::discover(std::istream& inp_stream) {
-    dict_t dict = getCandidateNgrams(inp_stream);
-    score_list_t score_vec = filteredDicts(dict);
-    return score_vec;
+    if (this->map_type == "hash") {
+        dict_t dict = getCandidateNgrams<dict_t>(inp_stream);
+        score_list_t score_vec = filteredDicts(dict);
+        return score_vec;
+    } 
+    else if (this->map_type == "trie") {
+        trie_t dict = getCandidateNgrams<trie_t>(inp_stream);
+        score_list_t score_vec = filteredDicts(dict);
+        return score_vec;
+    } 
+    else {
+        return score_list_t();
+    }
 }
 
 }

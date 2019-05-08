@@ -2,6 +2,7 @@
 #define __infoEnt_h__
 
 #include "myutils.h"
+#include <tsl/htrie_map.h>
 #include <iostream>
 #include <iomanip>
 #include <limits>
@@ -24,6 +25,7 @@ using word_t = std::string;
 using position_t = unsigned int;
 using word_stat_t = std::pair<count_t, std::vector<position_t>>;
 using dict_t = std::unordered_map<word_t, word_stat_t>;
+using trie_t = tsl::htrie_map<char, word_stat_t>;
 using score_pair_t = std::pair<word_t, WordScore>;
 using score_list_t = std::vector<score_pair_t>;
 
@@ -43,11 +45,12 @@ public:
 class FastNewWords {
 public:
     FastNewWords();
-    FastNewWords(const size_t max_gram, const size_t min_count, const float base_solidity, const float min_entropy);
+    FastNewWords(const std::string map_type, const size_t max_gram, const size_t min_count, const float base_solidity, const float min_entropy);
 
     score_list_t discover(std::istream& inp_stream);
     
 private:
+    std::string map_type;
     size_t max_gram;
     size_t min_count;
     std::vector<float> min_solidity;
@@ -55,17 +58,30 @@ private:
     std::string utf8_content;
     std::string reversed_utf8_content;
 
-    dict_t getCandidateNgrams(std::istream& inp_stream);
+    void insertWord(dict_t& d, const word_t& wd, const word_stat_t& ws);
 
-    dict_t mergeNdicts(const std::vector<dict_t>& dict_list);
+    void insertWord(trie_t& d, const word_t& wd, const word_stat_t& ws);
 
-    std::vector<dict_t> splitNdicts(const dict_t& dict);
+    word_t getKey(dict_t::const_iterator& it);
 
-    score_list_t filteredDicts(const dict_t& dict);
+    word_t getKey(trie_t::const_iterator& it);
 
+    word_stat_t getValue(dict_t::const_iterator& it);
+
+    word_stat_t getValue(trie_t::const_iterator& it);
+
+    template<typename T>
+    T getCandidateNgrams(std::istream& inp_stream);
+
+    template<typename T>
+    score_list_t filteredDicts(const T& dict);
+    
     count_t getUnigramSum(const dict_t& dict);
 
-    float solidity(const std::string& word, const dict_t& d);
+    count_t getUnigramSum(const trie_t& dict);
+
+    template<typename T>
+    float solidity(const std::string& word, const T& d);
 
     float entropy(const word_t& wd,
                   const std::vector<position_t>& positions,
