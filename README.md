@@ -3,7 +3,24 @@
 ## 1. 通用新词发现模块
 
 
-## 2. 新词发现接口设计
+## 2. 
+
+```text
+ - New words Discovery Module options
+Usage:
+  ./cpp [OPTION...]
+
+  -m, --map_type arg       Mapping type, 'hash' or 'trie' (default: hash)
+  -g, --max_gram arg       Max gram length (default: 4)
+  -c, --min_count arg      Minimum count (default: 5)
+  -s, --base_solidity arg  Minimum solidity of unigram (default: 5.0)
+  -e, --min_entropy arg    Minimum entropy (default: 2.0)
+      --sort               Sort the results
+      --help               Print help
+```
+
+
+
 
 
 ## 3. 安装
@@ -22,7 +39,7 @@ $ python setup.py install
 ## 5. 教程和文档
 
 
-## 6. 关键词提取工具
+## 6. 新词发现工具
 
 
 ## 7. Yard分布式部署

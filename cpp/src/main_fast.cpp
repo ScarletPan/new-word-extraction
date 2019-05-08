@@ -13,7 +13,7 @@ parse_args(int argc, char* argv[])
 {
   try
   {
-    cxxopts::Options options(argv[0], " - example command line options");
+    cxxopts::Options options(argv[0], " - New words Discovery Module options");
     options
       .positional_help("[optional args]")
       .show_positional_help();
@@ -23,12 +23,13 @@ parse_args(int argc, char* argv[])
     options
       .allow_unrecognised_options()
       .add_options()
-      ("m,map_type", "Mapping type, hash or trie", cxxopts::value<std::string>()->default_value("hash"), "N")
-      ("g,max_gram", "Max gram length", cxxopts::value<size_t>()->default_value("4"), "N")
-      ("c,min_count", "Minimum count", cxxopts::value<size_t>()->default_value("5"), "N")
-      ("s,base_solidity", "Minimum solidity of unigram", cxxopts::value<float>()->default_value("5.0"), "N")
-      ("e,min_entropy", "Minimum entropy", cxxopts::value<float>()->default_value("2.0"), "N")
+      ("m,map_type", "Mapping type, 'hash' or 'trie'", cxxopts::value<std::string>()->default_value("hash"))
+      ("g,max_gram", "Max gram length", cxxopts::value<size_t>()->default_value("4"))
+      ("c,min_count", "Minimum count", cxxopts::value<size_t>()->default_value("5"))
+      ("s,base_solidity", "Minimum solidity of unigram", cxxopts::value<float>()->default_value("5.0"))
+      ("e,min_entropy", "Minimum entropy", cxxopts::value<float>()->default_value("2.0"))
       ("sort", "Sort the results")
+      ("help", "Print help")
     #ifdef CXXOPTS_USE_UNICODE
       ("unicode", u8"A help option with non-ascii: à. Here the size of the"
         " string should be correct")
@@ -36,6 +37,13 @@ parse_args(int argc, char* argv[])
     ;
 
     auto result = options.parse(argc, argv);
+    
+    if (result.count("help"))
+    {
+      std::cout << options.help({"", "Group"}) << std::endl;
+      exit(0);
+    }
+
     return result;
 
   } catch (const cxxopts::OptionException& e)
