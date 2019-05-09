@@ -10,11 +10,8 @@
 ```bash
 $ git clone http://git.code.oa.com/alonsoli/new-word-extraction.git
 $ cd new-word-extraction
-$ mkdir build
-$ cd build
-$ cmake ../cpp
 $ make
-$ ./newwords-fast < ../data/books/renmingdemingyi.txt > tmp.txt
+$ ./fastnewwords < ../data/books/renmingdemingyi.txt > tmp.txt
 ```
 
 ### 2.2 Python版
