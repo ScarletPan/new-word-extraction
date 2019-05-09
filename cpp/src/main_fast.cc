@@ -86,8 +86,8 @@ int main(int argc, char** argv) {
     }
 
     float min_entropy;
-    if (cmdOptionExists(argv, argv+argc, "-s")) {
-        min_entropy = std::atof(getCmdOption(argv, argv + argc, "-c"));
+    if (cmdOptionExists(argv, argv+argc, "-e")) {
+        min_entropy = std::atof(getCmdOption(argv, argv + argc, "-e"));
     } else if (cmdOptionExists(argv, argv+argc, "--min_entropy")) {
         min_entropy = std::atof(getCmdOption(argv, argv + argc, "--min_entropy"));
     } else {

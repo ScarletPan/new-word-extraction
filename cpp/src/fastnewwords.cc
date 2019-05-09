@@ -3,6 +3,7 @@
 // 
 // Author: Haojie Pan
 // Email: jasonhjpan@tencent.com
+//
 
 #include "fastnewwords.h"
 
