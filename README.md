@@ -1,6 +1,6 @@
 [TOC]
 
-## 1. 通用新词发现模块
+## 1. 新词发现模块
 
 
 ## 2. 安装
@@ -10,6 +10,7 @@
 ```bash
 $ git clone http://git.code.oa.com/alonsoli/new-word-extraction.git
 $ cd new-word-extraction
+$ cd new-word-extraction/cpp
 $ make
 $ ./fastnewwords < ../data/books/renmingdemingyi.txt > tmp.txt
 ```
