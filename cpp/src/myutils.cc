@@ -1,7 +1,19 @@
 #include "myutils.h"
 
+#include <locale>
+
 namespace myutils
 {
+
+std::string wstringToString(const std::wstring str) {
+    unsigned len = str.size() * 4;
+    setlocale(LC_CTYPE, "");
+    char *p = new char[len];
+    wcstombs(p,str.c_str(),len);
+    std::string str1(p);
+    delete[] p;
+    return str1;
+}
 
 bool is_chinese(const std::string& str) {
     unsigned char utf[4] = {0};
@@ -32,22 +44,10 @@ bool is_chinese(const std::string& str) {
     return res;
 }
 
-std::string WstringToString(const std::wstring str)
-{// wstring转string
-    unsigned len = str.size() * 4;
-    setlocale(LC_CTYPE, "");
-    char *p = new char[len];
-    wcstombs(p,str.c_str(),len);
-    std::string str1(p);
-    delete[] p;
-    return str1;
-}
-
 bool is_chinese(const std::wstring& s) {
-    std::string str = WstringToString(s);
+    std::string str = wstringToString(s);
     return is_chinese(str);
 }
-
 
 bool have_punk(const std::wstring& s) {
     for (wchar_t wch: s) {
@@ -57,7 +57,6 @@ bool have_punk(const std::wstring& s) {
     }
     return false;
 }
-
 
 bool have_punk(const std::string& s) {
     int i = 0;
@@ -73,7 +72,6 @@ bool have_punk(const std::string& s) {
     return false;
 }
 
-
 size_t get_utf8_len(const char ch) {
     size_t len =
             (ch >> 7) == 0 ? 1 : // 0xxxxxxx
@@ -81,7 +79,6 @@ size_t get_utf8_len(const char ch) {
             (~ch & 0x10) ? 3: 4;
     return len;
 }
-
 
 std::string get_first_utf8(const std::string& utf8_str, const unsigned int st) {
     if (utf8_str.size() - st <= 0) return "";
@@ -111,7 +108,6 @@ std::vector<std::string> split_utf_str(const std::string& utf8_str) {
     return res;
 }
 
-
 std::string get_next_if_utf8(std::istream& utf8_if) {
     char ch;
     if (!utf8_if.get(ch)) {
@@ -131,7 +127,6 @@ std::string get_next_if_utf8(std::istream& utf8_if) {
     return str;
 }
 
-
 size_t size_of_utf8(const std::string& utf8_str) {
     size_t cnt = 0;
     int i = 0;
@@ -143,11 +138,9 @@ size_t size_of_utf8(const std::string& utf8_str) {
     return cnt;
 }
 
-
 size_t size_of_unicode_cn(const std::string& unicode_str) {
     return unicode_str.size() / 2;
 }
-
 
 std::string utf8_to_unicode_cn(const std::string& utf8_str) {
     std::string buffer;
@@ -179,4 +172,4 @@ std::string unicode_to_utf8_cn(const std::string& unicode_str) {
     return buffer;
 }
 
-} // namespace utils
+} // namespace myutls

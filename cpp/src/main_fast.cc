@@ -1,14 +1,21 @@
-#include "fastNewWords.h"
-#include "myutils.h"
-#include <iostream>
+// Copyright (c) 2019-present, Tencent, Inc.
+// All rights reserved.
+// 
+// Author: Haojie Pan
+// Email: jasonhjpan@tencent.com
+//
+
+#include <algorithm>
 #include <iomanip>
+#include <iostream>
 #include <string>
 #include <vector>
+
+#include "fastnewwords.h"
+
 using namespace fastnewwords;
 using namespace std;
 
-
-#include <algorithm>
 
 char* getCmdOption(char ** begin, char ** end, const std::string & option) {
     char ** itr = std::find(begin, end, option);

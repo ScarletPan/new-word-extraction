@@ -1,19 +1,20 @@
-#ifndef __infoEnt_h__
-#define __infoEnt_h__
+// Copyright (c) 2019-present, Tencent, Inc.
+// All rights reserved.
+// 
+// Author: Haojie Pan
+// Email: jasonhjpan@tencent.com
+//
 
-#include "myutils.h"
-#include <tsl/htrie_map.h>
-#include <iostream>
-#include <iomanip>
-#include <limits>
-#include <math.h>
-#include <numeric>
-#include <regex>
-#include <stack>
+
+#ifndef NEWWORDS_FASTNEWWORDS_H_
+#define NEWWORDS_FASTNEWWORDS_H_
+
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
+
+#include "tsl/htrie_map.h"
+
 
 namespace fastnewwords {
 
@@ -42,55 +43,56 @@ public:
     };
 };
 
+
 class FastNewWords {
 public:
     FastNewWords();
-    FastNewWords(const std::string map_type, const size_t max_gram, const size_t min_count, const float base_solidity, const float min_entropy);
+    FastNewWords(const std::string map_type, const size_t max_gram, 
+                 const size_t min_count, const float base_solidity,  
+                 const float min_entropy);
 
     score_list_t discover(std::istream& inp_stream);
     
 private:
+    // Parameters
     std::string map_type;
     size_t max_gram;
     size_t min_count;
     std::vector<float> min_solidity;
     float min_entropy;
+
+    // raw input stream container
     std::string utf8_content;
     std::string reversed_utf8_content;
 
+    // Adaptive operators for dic_t and trie_t
     void insertWord(dict_t& d, const word_t& wd, const word_stat_t& ws);
-
     void insertWord(trie_t& d, const word_t& wd, const word_stat_t& ws);
-
     word_t getKey(dict_t::const_iterator& it);
-
     word_t getKey(trie_t::const_iterator& it);
-
     word_stat_t getValue(dict_t::const_iterator& it);
-
     word_stat_t getValue(trie_t::const_iterator& it);
+    count_t getUnigramSum(const dict_t& dict);
+    count_t getUnigramSum(const trie_t& dict);
 
+    template<typename T>
+    float solidity(const std::string& word, const T& d, const count_t total);
+
+    float adjEntropy(const word_t& wd,
+                     const std::vector<position_t>& positions,
+                     const std::string& utf8_content,
+                     const std::string& reversed_utf8_content,
+                     bool left);
+
+    // Two steps for new words discovery
     template<typename T>
     T getCandidateNgrams(std::istream& inp_stream);
 
     template<typename T>
     score_list_t filteredDicts(const T& dict);
-    
-    count_t getUnigramSum(const dict_t& dict);
-
-    count_t getUnigramSum(const trie_t& dict);
-
-    template<typename T>
-    float solidity(const std::string& word, const T& d);
-
-    float entropy(const word_t& wd,
-                  const std::vector<position_t>& positions,
-                  const std::string& utf8_content,
-                  const std::string& reversed_utf8_content,
-                  bool left);
 };
 
-}
+} // namespace fastnewwords
 
 
-#endif
+#endif // NEWWORDS_FASTNEWWORDS_H_
