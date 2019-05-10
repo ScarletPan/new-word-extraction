@@ -17,7 +17,7 @@ for filepath in "$INPUT_DIR"/*
 do
   if [ -f "$filepath" ];then
     echo "Hanlding `basename $filepath txt` ...";
-    $EXE_PATH/fastnewwords < $filepath > $OUTPUT_DIR/"`basename $filepath txt`.words.txt" &
+    $EXE_PATH/fastnewwords < $filepath > $OUTPUT_DIR/"`basename $filepath .txt`words.txt" &
   fi
 done
 
