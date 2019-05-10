@@ -29,33 +29,49 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option) {
     return std::find(begin, end, option) != end;
 }
 
-bool mycomp(const score_pair_t& s1, const score_pair_t& s2) {
-    return s1.second.count > s2.second.count;
-}
-
 int main(int argc, char** argv) {
-    string map_type;
     if (cmdOptionExists(argv, argv+argc, "-h") || cmdOptionExists(argv, argv+argc, "--help")) {
         cerr << 
         " - New words Discovery Module options\n"
         " Usage:\n"
         "   ./newwords-fast [OPTION...]\n\n"
+        "   -M, --mode arg           program mode, 'retrieve' or 'rerank' (default: 'retrieve'\n"
         "   -m, --map_type arg       Mapping type, 'hash' or 'trie' (default: 'hash')\n"
         "   -g, --max_gram arg       Max gram length (default: 4)\n"
         "   -c, --min_count arg      Minimum count (default: 5)\n"
         "   -s, --base_solidity arg  Minimum solidity of unigram (default: 5.0)\n"
         "   -e, --min_entropy arg    Minimum entropy (default: 2.0)\n"
-        "       --sort               Sort the results\n"
+        "   -D, --dict arg           Exsiting dict path\n"
+        "   -S, --stopwords arg      Stopwords path\n"
         "   -h, --help               Print help\n\n";
         return 0;
     }
 
+
+    string mode;
+    if (cmdOptionExists(argv, argv+argc, "-M")) {
+        mode = getCmdOption(argv, argv + argc, "-M");
+    } else if (cmdOptionExists(argv, argv+argc, "--mode")) {
+        mode = getCmdOption(argv, argv + argc, "--mode");
+    } else {
+        mode = "retrieve";
+    }
+    if (mode != "retrieve" && mode != "rerank") {
+        cerr << "Please choose the valid mode : 'retrieve' or 'rerank' " << endl;
+        return 0;
+    }
+
+    string map_type;
     if (cmdOptionExists(argv, argv+argc, "-m")) {
         map_type = getCmdOption(argv, argv + argc, "-m");
     } else if (cmdOptionExists(argv, argv+argc, "--map_type")) {
         map_type = getCmdOption(argv, argv + argc, "--map_type");
     } else {
         map_type = "hash";
+    }
+    if (map_type != "hash" && map_type != "trie") {
+        cerr << "Please choose the valid map type : 'hash' or 'trie' " << endl;
+        return 0;
     }
 
     size_t max_gram;
@@ -93,37 +109,43 @@ int main(int argc, char** argv) {
     } else {
         min_entropy = 2.0;
     }
+
+    string dict_path;
+    if (cmdOptionExists(argv, argv+argc, "-D")) {
+        dict_path = getCmdOption(argv, argv + argc, "-D");
+    } else if (cmdOptionExists(argv, argv+argc, "--dict")) {
+        dict_path = getCmdOption(argv, argv + argc, "--dict");
+    } 
     
-    bool sort_results = false;
-    if (cmdOptionExists(argv, argv+argc, "--sort"))
-        sort_results = true;
+    string stopwords_path;
+    if (cmdOptionExists(argv, argv+argc, "-S")) {
+        stopwords_path = getCmdOption(argv, argv + argc, "-S");
+    } else if (cmdOptionExists(argv, argv+argc, "--stopwords")) {
+        stopwords_path = getCmdOption(argv, argv + argc, "--stopwords");
+    } 
 
-    cerr << std::fixed;
-    cerr << "\nNew Words Discovery Parameters: " << endl;
-    cerr << "\t[map_type]:      " << map_type << endl;
-    cerr << "\t[max_gram]:      " << max_gram << endl;
-    cerr << "\t[min_count]:     " << min_count << endl;
-    cerr << "\t[base_solidity]: " << setprecision(1) << base_solidity << endl;
-    cerr << "\t[min_entropy]:   " << setprecision(1) << min_entropy << endl;
-    cerr << "\t[sort]:          " << string(sort_results ? "true": "false") << endl << endl;
+    FastNewWords discoverer(map_type, 
+                            max_gram,
+                            min_count,
+                            base_solidity,
+                            min_entropy
+                            );
 
-    FastNewWords d(
-        map_type, 
-        max_gram,
-        min_count,
-        base_solidity,
-        min_entropy
-        );
+    if (mode == "retrieve") {
+        cerr << "====== Retrieving ======" << endl;
+        cerr << std::fixed;
+        cerr << "\nNew Words Discovery Parameters: " << endl;
+        cerr << "\t[map_type]:      " << map_type << endl;
+        cerr << "\t[max_gram]:      " << max_gram << endl;
+        cerr << "\t[min_count]:     " << min_count << endl;
+        cerr << "\t[base_solidity]: " << setprecision(1) << base_solidity << endl;
+        cerr << "\t[min_entropy]:   " << setprecision(1) << min_entropy << endl;
 
-    score_list_t scores = d.discover(std::cin);
-    if (sort_results)
-        sort(scores.begin(), scores.end(), mycomp);
-    // output
-    for (auto kv: scores) {
-        std::cout << kv.first << " ";
-        std::cout << kv.second.count << " ";
-        std::cout << kv.second.solidity << " ";
-        std::cout << kv.second.entropy << " " << std::endl;
+        discoverer.retrieve(std::cin, std::cout);
+    } else if (mode == "rerank") {
+        cerr << "====== Reranking ======" << endl;
+        FastNewWords d;
+        discoverer.rerank(std::cin, std::cout, dict_path,  stopwords_path);
     }
 
     return 0;

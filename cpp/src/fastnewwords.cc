@@ -270,19 +270,93 @@ score_list_t FastNewWords::filteredDicts(const T& dict) {
     return score_list;
 }
 
-score_list_t FastNewWords::discover(std::istream& inp_stream) {
+void FastNewWords::retrieve(std::istream& inp_stream, std::ostream& outp_stream) {
+    score_list_t scores;
     if (this->map_type == "hash") {
         dict_t dict = getCandidateNgrams<dict_t>(inp_stream);
-        score_list_t score_vec = filteredDicts(dict);
-        return score_vec;
+        scores = filteredDicts(dict);
     } 
     else if (this->map_type == "trie") {
         trie_t dict = getCandidateNgrams<trie_t>(inp_stream);
-        score_list_t score_vec = filteredDicts(dict);
-        return score_vec;
+        scores = filteredDicts(dict);
+    }
+
+    // output
+    for (auto kv: scores) {
+        std::cout << kv.first << " ";
+        std::cout << kv.second.count << " ";
+        std::cout << kv.second.solidity << " ";
+        std::cout << kv.second.entropy << " " << std::endl;
+    }
+}
+
+void FastNewWords::rerank(std::istream& inp_stream, 
+                          std::ostream& outp_stream,
+                          const std::string& dict_path,
+                          const std::string& stopwords_path){
+    word_set_t dictionary;
+    if (!dict_path.empty()) {
+        std::ifstream infile(dict_path);
+        word_t wd;
+        while (infile >> wd) dictionary.insert(wd);
     } 
-    else {
-        return score_list_t();
+
+    word_set_t stopwords;
+    if (!stopwords_path.empty()) {
+        std::ifstream infile(stopwords_path);
+        word_t wd;
+        while (infile >> wd) stopwords.insert(wd);
+    }
+    
+    word_t wd_;
+    count_t cnt_;
+    float sol_;
+    float ent_;
+    score_dict_t word2scores;
+    while (inp_stream >> wd_ >> cnt_ >> sol_ >> ent_) {
+        if (stopwords.find(wd_) != stopwords.end()) continue;
+        if (dictionary.find(wd_) != dictionary.end()) continue;
+        if (word2scores.find(wd_) == word2scores.end()) {
+            WordScore wsc(cnt_, sol_, ent_);
+            word2scores.insert({wd_, {1, wsc}});
+        } else {
+            auto &cnt_wsc = word2scores[wd_];
+            cnt_wsc.second.count = (cnt_wsc.second.count * cnt_wsc.first + cnt_) /
+                                    (cnt_wsc.first + 1); // Will loss precision
+            cnt_wsc.second.solidity = (cnt_wsc.second.solidity * cnt_wsc.first + sol_) /
+                                      (cnt_wsc.first + 1);
+            cnt_wsc.second.entropy = (cnt_wsc.second.entropy * cnt_wsc.first + ent_) /
+                                     (cnt_wsc.first + 1);
+            cnt_wsc.first++;
+        }
+    }
+
+    score_list_t scores;
+    // output
+    for (auto& kv: word2scores) {
+        auto &ws = kv.second.second;
+        if (ws.count < this->min_count)
+            continue;
+        if (ws.solidity < this->min_solidity[myutils::size_of_utf8(kv.first)])
+            continue;
+        if (ws.entropy < this->min_entropy)
+            continue;
+        scores.push_back({kv.first, ws});
+    }
+
+    auto comp = [] (std::pair<word_t, WordScore>& a, 
+                    std::pair<word_t, WordScore>& b) {
+                        return a.second.count > b.second.count;
+                };
+
+    sort(scores.begin(), scores.end(), comp);
+
+    // output
+    for (auto kv: scores) {
+        std::cout << kv.first << " ";
+        std::cout << kv.second.count << " ";
+        std::cout << kv.second.solidity << " ";
+        std::cout << kv.second.entropy << " " << std::endl;
     }
 }
 
