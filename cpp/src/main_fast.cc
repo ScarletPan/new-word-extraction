@@ -43,6 +43,8 @@ int main(int argc, char** argv) {
         "   -e, --min_entropy arg    Minimum entropy (default: 2.0)\n"
         "   -D, --dict arg           Exsiting dict path\n"
         "   -S, --stopwords arg      Stopwords path\n"
+        "       --topk arg           output topk frequent words\n"
+        "       --noscores arg       output words without scores\n"
         "   -h, --help               Print help\n\n";
         return 0;
     }
@@ -124,6 +126,16 @@ int main(int argc, char** argv) {
         stopwords_path = getCmdOption(argv, argv + argc, "--stopwords");
     } 
 
+    int topk = -1;
+    if (cmdOptionExists(argv, argv+argc, "--topk")) {
+        topk = std::stoi(getCmdOption(argv, argv + argc, "--topk"));
+    } 
+
+    bool withscores = true;
+    if (cmdOptionExists(argv, argv+argc, "--noscores")) {
+        withscores = false;
+    } 
+
     FastNewWords discoverer(map_type, 
                             max_gram,
                             min_count,
@@ -145,7 +157,7 @@ int main(int argc, char** argv) {
     } else if (mode == "rerank") {
         cerr << "====== Reranking ======" << endl;
         FastNewWords d;
-        discoverer.rerank(std::cin, std::cout, dict_path,  stopwords_path);
+        discoverer.rerank(std::cin, std::cout, dict_path,  stopwords_path, topk, withscores);
     }
 
     return 0;

@@ -59,7 +59,9 @@ public:
     void rerank(std::istream& inp_stream, 
                 std::ostream& outp_stream,
                 const std::string& dict_path="",
-                const std::string& stopwords_path="");
+                const std::string& stopwords_path="",
+                const int topk=-1,
+                const bool withscores=true);
     
 private:
     // Parameters

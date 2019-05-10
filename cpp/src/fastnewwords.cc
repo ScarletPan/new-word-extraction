@@ -293,7 +293,9 @@ void FastNewWords::retrieve(std::istream& inp_stream, std::ostream& outp_stream)
 void FastNewWords::rerank(std::istream& inp_stream, 
                           std::ostream& outp_stream,
                           const std::string& dict_path,
-                          const std::string& stopwords_path){
+                          const std::string& stopwords_path,
+                          const int topk,
+                          const bool withscores){
     word_set_t dictionary;
     if (!dict_path.empty()) {
         std::ifstream infile(dict_path);
@@ -351,12 +353,20 @@ void FastNewWords::rerank(std::istream& inp_stream,
 
     sort(scores.begin(), scores.end(), comp);
 
+    int cnt = 0;
     // output
     for (auto kv: scores) {
-        std::cout << kv.first << " ";
-        std::cout << kv.second.count << " ";
-        std::cout << kv.second.solidity << " ";
-        std::cout << kv.second.entropy << " " << std::endl;
+        if (topk > 0 && cnt == topk)
+            break;
+        cnt++;
+        if (withscores) {
+            std::cout << kv.first << " ";
+            std::cout << kv.second.count << " ";
+            std::cout << kv.second.solidity << " ";
+            std::cout << kv.second.entropy << " " << std::endl;
+        } else {
+            std::cout << kv.first << std::endl;
+        }
     }
 }
 
