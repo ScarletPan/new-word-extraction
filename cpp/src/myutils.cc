@@ -22,6 +22,8 @@ bool is_chinese(const std::string& str) {
     for (int i = 0; i < str.length(); i++) {
         if ((str[i] & 0x80) == 0) {
             res = false;
+        } else if ((str[i] & 0x20) == 0) {
+            res = false;
         }
         else{
             utf[0] = str[i];

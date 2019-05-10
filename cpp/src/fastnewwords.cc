@@ -339,15 +339,15 @@ void FastNewWords::rerank(std::istream& inp_stream,
         auto &ws = kv.second.second;
         if (ws.count < this->min_count)
             continue;
-        if (ws.solidity < this->min_solidity[myutils::size_of_utf8(kv.first)])
+        if (ws.solidity < this->min_solidity[1])
             continue;
         if (ws.entropy < this->min_entropy)
             continue;
         scores.push_back({kv.first, ws});
     }
 
-    auto comp = [] (std::pair<word_t, WordScore>& a, 
-                    std::pair<word_t, WordScore>& b) {
+    auto comp = [] (const std::pair<word_t, WordScore>& a, 
+                    const std::pair<word_t, WordScore>& b) {
                         return a.second.count > b.second.count;
                 };
 
