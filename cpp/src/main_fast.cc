@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "fastnewwords.h"
+#include "argparse.h"
 
 using namespace fastnewwords;
 using namespace std;
@@ -30,116 +31,49 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option) {
 }
 
 int main(int argc, char** argv) {
-    if (cmdOptionExists(argv, argv+argc, "-h") || cmdOptionExists(argv, argv+argc, "--help")) {
-        cerr << 
-        " - New words Discovery Module options\n"
-        " Usage:\n"
-        "   ./newwords-fast [OPTION...]\n\n"
-        "   -M, --mode arg           program mode, 'retrieve' or 'rerank' (default: 'retrieve'\n"
-        "   -m, --map_type arg       Mapping type, 'hash' or 'trie' (default: 'hash')\n"
-        "   -g, --max_gram arg       Max gram length (default: 4)\n"
-        "   -c, --min_count arg      Minimum count (default: 5)\n"
-        "   -s, --base_solidity arg  Minimum solidity of unigram (default: 5.0)\n"
-        "   -e, --min_entropy arg    Minimum entropy (default: 2.0)\n"
-        "   -D, --dict arg           Exsiting dict path\n"
-        "   -S, --stopwords arg      Stopwords path\n"
-        "       --topk arg           output topk frequent words\n"
-        "       --noscores arg       output words without scores\n"
-        "   -h, --help               Print help\n\n";
+    argparse::ArgumentParser parser("New words Discovery Module options");
+    parser.add_argument("--mode", "string", "retrieve", 
+                        "program mode, 'retrieve' or 'rerank' (default: 'retrieve')");
+    parser.add_argument("--map_type", "string", "hash", 
+                        "Mapping type, 'hash' or 'trie' (default: 'hash')");
+    parser.add_argument("--max_gram", "int", "4", 
+                        "Max gram length (default: 4)");
+    parser.add_argument("--min_count", "int", "5", 
+                        "Minimum count (default: 5)");
+    parser.add_argument("--min_solidity", "float", "5.0", 
+                        "Minimum solidity of unigram (default: 5.0)");
+    parser.add_argument("--min_entropy", "float", "2.0", 
+                        "Minimum entropy (default: 2.0)");
+    parser.add_argument("--topk", "int", "20", 
+                        "Return only topk after reranking (default: 20)");
+    parser.add_argument("--dict", "string", "", 
+                        "Exsiting dict path");
+    parser.add_argument("--stopwords", "string", "", 
+                        "Stopwords path");
+    parser.add_argument("--noscores", "bool", "0", 
+                        "output words without scores");
+    if (!parser.parse_args(argc, argv))
         return 0;
-    }
 
-
-    string mode;
-    if (cmdOptionExists(argv, argv+argc, "-M")) {
-        mode = getCmdOption(argv, argv + argc, "-M");
-    } else if (cmdOptionExists(argv, argv+argc, "--mode")) {
-        mode = getCmdOption(argv, argv + argc, "--mode");
-    } else {
-        mode = "retrieve";
-    }
-    if (mode != "retrieve" && mode != "rerank") {
-        cerr << "Please choose the valid mode : 'retrieve' or 'rerank' " << endl;
-        return 0;
-    }
-
-    string map_type;
-    if (cmdOptionExists(argv, argv+argc, "-m")) {
-        map_type = getCmdOption(argv, argv + argc, "-m");
-    } else if (cmdOptionExists(argv, argv+argc, "--map_type")) {
-        map_type = getCmdOption(argv, argv + argc, "--map_type");
-    } else {
-        map_type = "hash";
-    }
-    if (map_type != "hash" && map_type != "trie") {
-        cerr << "Please choose the valid map type : 'hash' or 'trie' " << endl;
-        return 0;
-    }
-
-    size_t max_gram;
-    if (cmdOptionExists(argv, argv+argc, "-g")) {
-        max_gram = std::stoi(getCmdOption(argv, argv + argc, "-g"));
-    } else if (cmdOptionExists(argv, argv+argc, "--max_gram")) {
-        max_gram = std::stoi(getCmdOption(argv, argv + argc, "--max_gram"));
-    } else {
-        max_gram = 4;
-    }
-
-    size_t min_count;
-    if (cmdOptionExists(argv, argv+argc, "-c")) {
-        min_count = std::atoi(getCmdOption(argv, argv + argc, "-c"));
-    } else if (cmdOptionExists(argv, argv+argc, "--min_count")) {
-        min_count = std::atoi(getCmdOption(argv, argv + argc, "--min_count"));
-    } else {
-        min_count = 5;
-    }
-
-    float base_solidity;
-    if (cmdOptionExists(argv, argv+argc, "-s")) {
-        base_solidity = std::atof(getCmdOption(argv, argv + argc, "-s"));
-    } else if (cmdOptionExists(argv, argv+argc, "--base_solidity")) {
-        base_solidity = std::atof(getCmdOption(argv, argv + argc, "--base_solidity"));
-    } else {
-        base_solidity = 5.0;
-    }
-
-    float min_entropy;
-    if (cmdOptionExists(argv, argv+argc, "-e")) {
-        min_entropy = std::atof(getCmdOption(argv, argv + argc, "-e"));
-    } else if (cmdOptionExists(argv, argv+argc, "--min_entropy")) {
-        min_entropy = std::atof(getCmdOption(argv, argv + argc, "--min_entropy"));
-    } else {
-        min_entropy = 2.0;
-    }
-
-    string dict_path;
-    if (cmdOptionExists(argv, argv+argc, "-D")) {
-        dict_path = getCmdOption(argv, argv + argc, "-D");
-    } else if (cmdOptionExists(argv, argv+argc, "--dict")) {
-        dict_path = getCmdOption(argv, argv + argc, "--dict");
-    } 
-    
-    string stopwords_path;
-    if (cmdOptionExists(argv, argv+argc, "-S")) {
-        stopwords_path = getCmdOption(argv, argv + argc, "-S");
-    } else if (cmdOptionExists(argv, argv+argc, "--stopwords")) {
-        stopwords_path = getCmdOption(argv, argv + argc, "--stopwords");
-    } 
-
-    int topk = -1;
-    if (cmdOptionExists(argv, argv+argc, "--topk")) {
-        topk = std::stoi(getCmdOption(argv, argv + argc, "--topk"));
-    } 
-
-    bool withscores = true;
-    if (cmdOptionExists(argv, argv+argc, "--noscores")) {
-        withscores = false;
-    } 
+    string mode, map_type, dict_path, stopwords_path;
+    int max_gram, min_count, topk;
+    float min_solidity, min_entropy;
+    bool noscores;
+    parser.get("mode", mode);
+    parser.get("map_type", map_type);
+    parser.get("max_gram", max_gram);
+    parser.get("min_count", min_count);
+    parser.get("min_solidity", min_solidity);
+    parser.get("min_entropy", min_entropy);
+    parser.get("topk", topk);
+    parser.get("dict", dict_path);
+    parser.get("stopwords", stopwords_path);
+    parser.get("noscores", noscores);
 
     FastNewWords discoverer(map_type, 
                             max_gram,
                             min_count,
-                            base_solidity,
+                            min_solidity,
                             min_entropy
                             );
 
@@ -150,14 +84,14 @@ int main(int argc, char** argv) {
         cerr << "\t[map_type]:      " << map_type << endl;
         cerr << "\t[max_gram]:      " << max_gram << endl;
         cerr << "\t[min_count]:     " << min_count << endl;
-        cerr << "\t[base_solidity]: " << setprecision(1) << base_solidity << endl;
+        cerr << "\t[min_solidity]: " << setprecision(1) << min_solidity << endl;
         cerr << "\t[min_entropy]:   " << setprecision(1) << min_entropy << endl;
 
         discoverer.retrieve(std::cin, std::cout);
     } else if (mode == "rerank") {
         cerr << "====== Reranking ======" << endl;
         FastNewWords d;
-        discoverer.rerank(std::cin, std::cout, dict_path,  stopwords_path, topk, withscores);
+        discoverer.rerank(std::cin, std::cout, dict_path,  stopwords_path, topk, !noscores);
     }
 
     return 0;
