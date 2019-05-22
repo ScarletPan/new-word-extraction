@@ -31,7 +31,7 @@ $ python setup.py install
 1. **检索候选词** `retrieve`
 
 ```bash
-$ ./cpp/fastnewwords < ../data/books/renmingdemingyi.txt > tmp.txt
+$ ./cpp/fastnewwords --mode retrieve < ../data/books/renmingdemingyi.txt > tmp.txt
 ```
 
 输入文件格式为含中文的 `utf8` 文本，输出格式为 [word] [count] [score1] [score2]\n 如下例所示：
@@ -47,7 +47,7 @@ $ ./cpp/fastnewwords < ../data/books/renmingdemingyi.txt > tmp.txt
 2. **重排序** `rerank`
 
 ```bash
-$ ./cpp/fastnewwords -M rerank -D dict.txt -S stopwwords.txt < tmp.txt > tmp.txt
+$ ./cpp/fastnewwords --mode rerank --dict dict.txt --stopwords stopwwords.txt < tmp.txt > tmp.txt
 ```
 
 输入/输出文件格式 与 上一步的输出文件格式相同
@@ -65,23 +65,21 @@ $ python demo/newwords.py < ../data/books/renmingdemingyi.txt > tmp.txt
 ### 3.1 C++快速版
 
 ```
-$ ./newwords-fast --help
+$ ./fastnewwords --help
 
-- New words Discovery Module options
+* New words Discovery Module options
  Usage:
-   ./newwords-fast [OPTION...]
-
-   -M, --mode arg           program mode, 'retrieve' or 'rerank' (default: 'retrieve'
-   -m, --map_type arg       Mapping type, 'hash' or 'trie' (default: 'hash')
-   -g, --max_gram arg       Max gram length (default: 4)
-   -c, --min_count arg      Minimum count (default: 5)
-   -s, --base_solidity arg  Minimum solidity of unigram (default: 5.0)
-   -e, --min_entropy arg    Minimum entropy (default: 2.0)
-   -D, --dict arg           Exsiting dict path
-   -S, --stopwords arg      Stopwords path
-       --topk arg           output topk frequent words
-       --noscores arg       output words without scores
-   -h, --help               Print help
+   --topk arg          Return only topk after reranking (default: 20)
+   --min_solidity arg  Minimum solidity of unigram (default: 5.0)
+   --stopwords arg     Stopwords path
+   --dict arg          Exsiting dict path
+   --min_count arg     Minimum count (default: 5)
+   --map_type arg      Mapping type, 'hash' or 'trie' (default: 'hash')
+   --max_gram arg      Max gram length (default: 4)
+   --noscores arg      output words without scores
+   --min_entropy arg   Minimum entropy (default: 2.0)
+   --mode arg          program mode, 'retrieve' or 'rerank' (default: 'retrieve')
+   -h, --help          Print help
 ```
 
 
@@ -118,8 +116,8 @@ optional arguments:
 * 《人民的名义》
 
 ```bash
-$ ./fastnewwords -M retrieve < ../data/books/renmingdemingyi.txt > tmp.txt
-$ ./fastnewwords -M rerank -s 5 --topk 20 --noscores --dict ../data/dict/dict.txt --stopwords ../data/dict/stopwords.txt < tmp.txt > tmp2.txt
+$ ./fastnewwords --mode retrieve < ../data/books/renmingdemingyi.txt > tmp.txt
+$ ./fastnewwords --mode rerank --min_solidity 5 --topk 20 --noscores --dict ../data/dict/dict.txt --stopwords ../data/dict/stopwords.txt < tmp.txt > tmp2.txt
 
 TOP 20 Frequent: 
 侯亮平 李达康 高育良 祁同伟 蔡成功 沙瑞金 高小琴 陈海 丁义珍 陆亦可 欧阳菁 季昌明 京州 也不 陈岩石 刘新建 郑西坡 赵瑞龙 赵东来 大风厂
@@ -128,8 +126,8 @@ TOP 20 Frequent:
 * 《天龙八部》
 
 ```bash
-$ ./fastnewwords -M retrieve < ../data/books/tianlongbabu_jinyong.txt > tmp.txt
-$ ./fastnewwords -M rerank -s 15 --topk 20 --noscores --dict ../data/dict/dict.txt  --stopwords ../data/dict/stopwords.txt < tmp.txt > tmp2.txt
+$ ./fastnewwords --mode retrieve < ../data/books/tianlongbabu_jinyong.txt > tmp.txt
+$ ./fastnewwords --mode rerank --min_solidity 15 --topk 20 --noscores --dict ../data/dict/dict.txt  --stopwords ../data/dict/stopwords.txt < tmp.txt > tmp2.txt
 
 TOP 20 Frequent: 
 段誉 萧峰 阿紫 乔峰 阿朱 童姥 钟灵 保定帝 阿碧 玄难 玄慈 薛神医 群豪 师叔 谭婆 辽国 吓得 青袍客 谭公 师伯
@@ -139,7 +137,7 @@ TOP 20 Frequent:
 
 ```bash
 $ ./fastnewwords < ../data/books/bingyuhuo.txt > tmp.txt
-$ ./fastnewwords -M rerank -s 15 --topk 20 --noscores -D ../data/dict/dict.txt --stopwords ../data/dict/stopwords.txt < tmp.txt > tmp2.txt
+$ ./fastnewwords --mode rerank --min_solidity 15 --topk 20 --noscores -D ../data/dict/dict.txt --stopwords ../data/dict/stopwords.txt < tmp.txt > tmp2.txt
 
 TOP 20 Frequent: 
 琼恩 丹妮 詹姆 珊莎 瑟曦 凯特琳 劳勃 罗柏 席恩 艾德 诸神 阿多 蓝礼 佛雷 莫尔蒙 托曼 冰原狼 伊蒙 莱莎 弥林 
